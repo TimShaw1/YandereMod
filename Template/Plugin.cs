@@ -1,8 +1,10 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using YourThunderstoreTeam.patch;
-using YourThunderstoreTeam.service;
+using System.IO;
+using System.Reflection;
+using UnityEngine;
+using GameNetcodeStuff;
 
 namespace YourThunderstoreTeam;
 
@@ -15,7 +17,30 @@ public class Plugin : BaseUnityPlugin
 
     private readonly Harmony _harmony = new(PluginInfo.PLUGIN_GUID);
 
-    public TemplateService Service;
+    public static string assembly_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+    public static class Assets
+    {
+        public static string mainAssetBundleName = "yandereassets";
+
+        public static AssetBundle MainAssetBundle = null;
+
+        private static string GetAssemblyName()
+        {
+            return Assembly.GetExecutingAssembly().FullName.Split(',')[0];
+        }
+
+        public static void PopulateAssets()
+        {
+            if ((Object)(object)MainAssetBundle == (Object)null)
+            {
+                using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(GetAssemblyName() + "." + mainAssetBundleName))
+                {
+                    MainAssetBundle = AssetBundle.LoadFromStream(stream);
+                }
+            }
+        }
+    }
 
     public Plugin()
     {
@@ -24,8 +49,8 @@ public class Plugin : BaseUnityPlugin
 
     private void Awake()
     {
-        Service = new TemplateService();
-
+        Assets.PopulateAssets();
+        EnemyType val = Assets.MainAssetBundle.LoadAsset<EnemyType>("yandereEnemy");
         Log.LogInfo($"Applying patches...");
         ApplyPluginPatch();
         Log.LogInfo($"Patches applied");
@@ -36,7 +61,6 @@ public class Plugin : BaseUnityPlugin
     /// </summary>
     private void ApplyPluginPatch()
     {
-        _harmony.PatchAll(typeof(ShipLightsPatch));
-        _harmony.PatchAll(typeof(PlayerControllerBPatch));
+        _harmony.PatchAll();
     }
 }
