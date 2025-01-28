@@ -4,20 +4,27 @@ using HarmonyLib;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
-using GameNetcodeStuff;
+using LethalLib.Modules;
+using System;
 
-namespace YourThunderstoreTeam;
+namespace yandereMod;
 
-[BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+[BepInPlugin("YandereMod", "YandereMod", "1.0.0")]
+[BepInDependency(LethalLib.Plugin.ModGUID)]
 public class Plugin : BaseUnityPlugin
 {
     public static Plugin Instance { get; set; }
 
     public static ManualLogSource Log => Instance.Logger;
 
-    private readonly Harmony _harmony = new(PluginInfo.PLUGIN_GUID);
+    private readonly Harmony _harmony = new("YandereMod");
 
     public static string assembly_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+    static void WriteToConsole(string output)
+    {
+        Console.WriteLine("YandereMod: " + output);
+    }
 
     public static class Assets
     {
@@ -32,12 +39,11 @@ public class Plugin : BaseUnityPlugin
 
         public static void PopulateAssets()
         {
-            if ((Object)(object)MainAssetBundle == (Object)null)
+            if ((UnityEngine.Object)(object)MainAssetBundle == (UnityEngine.Object)null)
             {
-                using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(GetAssemblyName() + "." + mainAssetBundleName))
-                {
-                    MainAssetBundle = AssetBundle.LoadFromStream(stream);
-                }
+                string sAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+                MainAssetBundle = AssetBundle.LoadFromFile(Path.Combine(sAssemblyLocation, "yandereassets"));
             }
         }
     }
@@ -50,7 +56,22 @@ public class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Assets.PopulateAssets();
-        EnemyType val = Assets.MainAssetBundle.LoadAsset<EnemyType>("yandereEnemy");
+        WriteToConsole("Populated Assets: " + Assets.MainAssetBundle.name);
+        foreach (var asset in Assets.MainAssetBundle.GetAllAssetNames())
+        {
+            WriteToConsole(asset);
+        }
+        EnemyType val = Assets.MainAssetBundle.LoadAsset<EnemyType>("assets/yandereenemy.asset");
+        WriteToConsole("2: " + (val == null));
+        TerminalNode val2 = Assets.MainAssetBundle.LoadAsset<TerminalNode>("assets/yandereterminalnode.asset");
+        WriteToConsole("3: " + (val2 == null));
+        TerminalKeyword val3 = Assets.MainAssetBundle.LoadAsset<TerminalKeyword>("yandere");
+        WriteToConsole("4: " + (val2 == null));
+        // breaks here
+        LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(val.enemyPrefab);
+        WriteToConsole("5");
+        Enemies.RegisterEnemy(val, 22, (Levels.LevelTypes)(-1), (Enemies.SpawnType)0, val2, val3);
+        WriteToConsole("6");
         Log.LogInfo($"Applying patches...");
         ApplyPluginPatch();
         Log.LogInfo($"Patches applied");
