@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using GameNetcodeStuff;
@@ -90,6 +91,11 @@ namespace yandereMod
 
         [Space(5f)]
         public int maxAsync = 50;
+
+        static void WriteToConsole(string output)
+        {
+            Console.WriteLine("YandereAI: " + output);
+        }
 
         public override void Start()
         {
@@ -216,7 +222,7 @@ namespace yandereMod
             }
             angerCheckInterval = 0f;
             float num = Mathf.Clamp(0.09f * angerMeter, 0f, 0.99f);
-            if (Random.Range(0f, 1f) < num)
+            if (UnityEngine.Random.Range(0f, 1f) < num)
             {
                 if (angerMeter < 2.5f)
                 {
@@ -284,12 +290,15 @@ namespace yandereMod
         public override void Update()
         {
             base.Update();
+            WriteToConsole("Base updated");
             if (isEnemyDead || inKillAnimation || GameNetworkManager.Instance == null)
             {
+                WriteToConsole("returning...");
                 return;
             }
             if (base.IsOwner && gettingFarthestNodeFromPlayerAsync && targetPlayer != null)
             {
+                WriteToConsole("In base isowner");
                 float num = Vector3.Distance(base.transform.position, targetPlayer.transform.position);
                 if (num < 16f)
                 {
@@ -310,9 +319,11 @@ namespace yandereMod
                 }
                 farthestNodeFromTargetPlayer = transform;
                 gettingFarthestNodeFromPlayerAsync = false;
+                WriteToConsole("Exit base isowner");
             }
             if (GameNetworkManager.Instance.localPlayerController.HasLineOfSightToPosition(base.transform.position + Vector3.up * 0.5f, 30f))
             {
+                WriteToConsole("In local player controller");
                 if (currentBehaviourStateIndex == 0)
                 {
                     SwitchToBehaviourState(1);
@@ -337,7 +348,10 @@ namespace yandereMod
                     LookAtYandereTrigger(playerObj);
                     ResetYandereStealthTimerServerRpc(playerObj);
                 }
+                WriteToConsole("Exit local player controller");
             }
+
+            WriteToConsole("Start behavior");
             switch (currentBehaviourStateIndex)
             {
                 case 1:
@@ -455,7 +469,7 @@ namespace yandereMod
                             isInAngerMode = true;
                             DropPlayerBody();
                             creatureAngerVoice.Play();
-                            creatureAngerVoice.pitch = Random.Range(0.9f, 1.3f);
+                            creatureAngerVoice.pitch = UnityEngine.Random.Range(0.9f, 1.3f);
                             creatureAnimator.SetBool("anger", value: true);
                             creatureAnimator.SetBool("sneak", value: false);
                             if (GameNetworkManager.Instance.localPlayerController.HasLineOfSightToPosition(base.transform.position, 60f, 15, 2.5f))
@@ -488,6 +502,8 @@ namespace yandereMod
                         break;
                     }
             }
+            WriteToConsole("End behavior");
+            WriteToConsole("Start anger");
             if (isInAngerMode)
             {
                 creatureAngerVoice.volume = Mathf.Lerp(creatureAngerVoice.volume, 1f, 10f * Time.deltaTime);
@@ -496,6 +512,7 @@ namespace yandereMod
             {
                 creatureAngerVoice.volume = Mathf.Lerp(creatureAngerVoice.volume, 0f, 2f * Time.deltaTime);
             }
+            WriteToConsole("end anger");
             Vector3 localEulerAngles = animationContainer.localEulerAngles;
             if (carryingPlayerBody)
             {
@@ -510,6 +527,7 @@ namespace yandereMod
                 creatureAnimator.SetLayerWeight(1, Mathf.Lerp(creatureAnimator.GetLayerWeight(1), 0f, 10f * Time.deltaTime));
             }
             animationContainer.localEulerAngles = localEulerAngles;
+            WriteToConsole("Done update");
         }
 
         [ServerRpc]
@@ -735,7 +753,7 @@ namespace yandereMod
                 position = RoundManager.Instance.GetNavMeshPosition(position, default(NavMeshHit), 10f);
                 if (!RoundManager.Instance.GotNavMeshPositionResult)
                 {
-                    position = ((!Physics.Raycast(base.transform.position, -Vector3.up, out var hitInfo, 50f, StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)) ? allAINodes[Random.Range(0, allAINodes.Length)].transform.position : RoundManager.Instance.GetNavMeshPosition(hitInfo.point, default(NavMeshHit), 10f));
+                    position = ((!Physics.Raycast(base.transform.position, -Vector3.up, out var hitInfo, 50f, StartOfRound.Instance.collidersAndRoomMaskAndDefault, QueryTriggerInteraction.Ignore)) ? allAINodes[UnityEngine.Random.Range(0, allAINodes.Length)].transform.position : RoundManager.Instance.GetNavMeshPosition(hitInfo.point, default(NavMeshHit), 10f));
                 }
                 base.transform.position = position;
                 agent.enabled = true;
@@ -777,7 +795,7 @@ namespace yandereMod
             }
             if (!evadeModeStareDown)
             {
-                if (Random.Range(0, 70) < stareDownChanceIncrease)
+                if (UnityEngine.Random.Range(0, 70) < stareDownChanceIncrease)
                 {
                     stareDownChanceIncrease = -6;
                     evadeModeStareDown = true;
