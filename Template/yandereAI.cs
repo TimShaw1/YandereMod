@@ -290,15 +290,12 @@ namespace yandereMod
         public override void Update()
         {
             base.Update();
-            WriteToConsole("Base updated");
             if (isEnemyDead || inKillAnimation || GameNetworkManager.Instance == null)
             {
-                WriteToConsole("returning...");
                 return;
             }
             if (base.IsOwner && gettingFarthestNodeFromPlayerAsync && targetPlayer != null)
             {
-                WriteToConsole("In base isowner");
                 float num = Vector3.Distance(base.transform.position, targetPlayer.transform.position);
                 if (num < 16f)
                 {
@@ -319,11 +316,9 @@ namespace yandereMod
                 }
                 farthestNodeFromTargetPlayer = transform;
                 gettingFarthestNodeFromPlayerAsync = false;
-                WriteToConsole("Exit base isowner");
             }
             if (GameNetworkManager.Instance.localPlayerController.HasLineOfSightToPosition(base.transform.position + Vector3.up * 0.5f, 30f))
             {
-                WriteToConsole("In local player controller");
                 if (currentBehaviourStateIndex == 0)
                 {
                     SwitchToBehaviourState(1);
@@ -348,10 +343,8 @@ namespace yandereMod
                     LookAtYandereTrigger(playerObj);
                     ResetYandereStealthTimerServerRpc(playerObj);
                 }
-                WriteToConsole("Exit local player controller");
             }
 
-            WriteToConsole("Start behavior");
             switch (currentBehaviourStateIndex)
             {
                 case 1:
@@ -372,11 +365,11 @@ namespace yandereMod
                     }
                     if (stunNormalizedTimer > 0f)
                     {
-                        creatureAnimator.SetLayerWeight(2, 1f);
+                        //creatureAnimator.SetLayerWeight(2, 1f);
                     }
                     else
                     {
-                        creatureAnimator.SetLayerWeight(2, 0f);
+                        //creatureAnimator.SetLayerWeight(2, 0f);
                     }
                     evadeStealthTimer += Time.deltaTime;
                     if (thisNetworkObject.IsOwner)
@@ -485,13 +478,13 @@ namespace yandereMod
                         CalculateAnimationDirection(3f);
                         if (stunNormalizedTimer > 0f)
                         {
-                            creatureAnimator.SetLayerWeight(2, 1f);
+                            //creatureAnimator.SetLayerWeight(2, 1f);
                             agent.speed = 0f;
                             angerMeter = 6f;
                         }
                         else
                         {
-                            creatureAnimator.SetLayerWeight(2, 0f);
+                            //creatureAnimator.SetLayerWeight(2, 0f);
                             agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 1.2f, 3f, 12f);
                         }
                         angerMeter -= Time.deltaTime;
@@ -502,8 +495,6 @@ namespace yandereMod
                         break;
                     }
             }
-            WriteToConsole("End behavior");
-            WriteToConsole("Start anger");
             if (isInAngerMode)
             {
                 creatureAngerVoice.volume = Mathf.Lerp(creatureAngerVoice.volume, 1f, 10f * Time.deltaTime);
@@ -512,22 +503,20 @@ namespace yandereMod
             {
                 creatureAngerVoice.volume = Mathf.Lerp(creatureAngerVoice.volume, 0f, 2f * Time.deltaTime);
             }
-            WriteToConsole("end anger");
             Vector3 localEulerAngles = animationContainer.localEulerAngles;
             if (carryingPlayerBody)
             {
                 agent.angularSpeed = 50f;
                 localEulerAngles.z = Mathf.Lerp(localEulerAngles.z, 179f, 10f * Time.deltaTime);
-                creatureAnimator.SetLayerWeight(1, Mathf.Lerp(creatureAnimator.GetLayerWeight(1), 1f, 10f * Time.deltaTime));
+                //creatureAnimator.SetLayerWeight(1, Mathf.Lerp(creatureAnimator.GetLayerWeight(1), 1f, 10f * Time.deltaTime));
             }
             else
             {
                 agent.angularSpeed = 220f;
                 localEulerAngles.z = Mathf.Lerp(localEulerAngles.z, 0f, 10f * Time.deltaTime);
-                creatureAnimator.SetLayerWeight(1, Mathf.Lerp(creatureAnimator.GetLayerWeight(1), 0f, 10f * Time.deltaTime));
+                //creatureAnimator.SetLayerWeight(1, Mathf.Lerp(creatureAnimator.GetLayerWeight(1), 0f, 10f * Time.deltaTime));
             }
             animationContainer.localEulerAngles = localEulerAngles;
-            WriteToConsole("Done update");
         }
 
         [ServerRpc]
@@ -820,7 +809,7 @@ namespace yandereMod
             }
             creatureSFX.Stop();
             creatureAngerVoice.Stop();
-            creatureAnimator.SetLayerWeight(2, 0f);
+            //creatureAnimator.SetLayerWeight(2, 0f);
             base.KillEnemy();
             if (carryingPlayerBody)
             {
