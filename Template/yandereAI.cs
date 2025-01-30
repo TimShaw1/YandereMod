@@ -237,11 +237,6 @@ namespace yandereMod
         [ServerRpc]
         public void EnterAngerModeServerRpc(float angerTime)
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
 
             EnterAngerModeClientRpc(angerTime);
 
@@ -250,15 +245,13 @@ namespace yandereMod
         [ClientRpc]
         public void EnterAngerModeClientRpc(float angerTime)
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager != null && networkManager.IsListening)
-            {
-                angerMeter = angerTime;
-                agent.speed = 9f;
-                SwitchToBehaviourStateOnLocalClient(2);
-                waitAroundEntrancePosition = RoundManager.Instance.GetRandomNavMeshPositionInRadius(mainEntrancePosition, 6f);
 
-            }
+            angerMeter = angerTime;
+            agent.speed = 9f;
+            SwitchToBehaviourStateOnLocalClient(2);
+            waitAroundEntrancePosition = RoundManager.Instance.GetRandomNavMeshPositionInRadius(mainEntrancePosition, 6f);
+
+            
         }
 
         public void ChooseClosestNodeToPlayer()
@@ -522,11 +515,6 @@ namespace yandereMod
         [ServerRpc]
         public void DropPlayerBodyServerRpc()
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
             DropPlayerBodyClientRpc();
 
         }
@@ -534,12 +522,10 @@ namespace yandereMod
         [ClientRpc]
         public void DropPlayerBodyClientRpc()
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager != null && networkManager.IsListening)
-            {
-                DropPlayerBody();
 
-            }
+            DropPlayerBody();
+
+            
         }
 
         private void DropPlayerBody()
@@ -595,11 +581,6 @@ namespace yandereMod
         [ServerRpc(RequireOwnership = false)]
         public void KillPlayerAnimationServerRpc(int playerObjectId)
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
 
             if (!inKillAnimation && !carryingPlayerBody)
             {
@@ -620,22 +601,15 @@ namespace yandereMod
         [ClientRpc]
         public void CancelKillAnimationClientRpc(int playerObjectId)
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager != null && networkManager.IsListening)
-            {
-                startingKillAnimationLocalClient = false;
 
-            }
+            startingKillAnimationLocalClient = false;
+
+            
         }
 
         [ClientRpc]
         public void KillPlayerAnimationClientRpc(int playerObjectId)
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager == null || !networkManager.IsListening)
-            {
-                return;
-            }
             inSpecialAnimationWithPlayer = StartOfRound.Instance.allPlayerScripts[playerObjectId];
             if (inSpecialAnimationWithPlayer == GameNetworkManager.Instance.localPlayerController)
             {
@@ -758,22 +732,18 @@ namespace yandereMod
         [ServerRpc(RequireOwnership = false)]
         public void ResetYandereStealthTimerServerRpc(int playerObj)
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager != null && networkManager.IsListening)
-            {
-                ResetYandereStealthClientRpc(playerObj);
 
-            }
+            ResetYandereStealthClientRpc(playerObj);
+
+            
         }
 
         [ClientRpc]
         public void ResetYandereStealthClientRpc(int playerObj)
         {
-            NetworkManager networkManager = base.NetworkManager;
-            if ((object)networkManager != null && networkManager.IsListening)
-            {
-                LookAtYandereTrigger(playerObj);
-            }
+
+            LookAtYandereTrigger(playerObj);
+            
         }
 
         public void LookAtYandereTrigger(int playerObj)
