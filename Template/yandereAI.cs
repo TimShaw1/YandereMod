@@ -567,8 +567,22 @@ namespace yandereMod
             previousPosition = base.transform.position;
         }
 
+        public void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions(other, inKillAnimation || startingKillAnimationLocalClient || carryingPlayerBody);
+                if (playerControllerB != null)
+                {
+                    KillPlayerAnimationServerRpc((int)playerControllerB.playerClientId);
+                    startingKillAnimationLocalClient = true;
+                }
+            }
+        }
+
         public override void OnCollideWithPlayer(Collider other)
         {
+            WriteToConsole("Colliding with player");
             base.OnCollideWithPlayer(other);
             PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions(other, inKillAnimation || startingKillAnimationLocalClient || carryingPlayerBody);
             if (playerControllerB != null)
