@@ -92,7 +92,7 @@ namespace yandereMod
         [Space(5f)]
         public int maxAsync = 50;
 
-        static void WriteToConsole(string output)
+        public static void WriteToConsole(string output)
         {
             Console.WriteLine("YandereAI: " + output);
         }
@@ -535,6 +535,10 @@ namespace yandereMod
                 carryingPlayerBody = false;
                 bodyBeingCarried.matchPositionExactly = false;
                 bodyBeingCarried.attachedTo = null;
+                DeadBodyInfo bodyBeingCarriedCopy = bodyBeingCarried;
+                WriteToConsole("" + bodyBeingCarriedCopy.transform.position);
+                WriteToConsole("" + bodyBeingCarriedCopy.playerScript);
+                ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
                 bodyBeingCarried = null;
                 creatureAnimator.SetBool("carryingBody", value: false);
             }
