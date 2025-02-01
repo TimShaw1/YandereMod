@@ -11,6 +11,7 @@ namespace yandereMod
     public class ReviveManager : NetworkBehaviour
     {
         public static ReviveManager Instance { get; private set; }
+        public Camera PlayerDraggingCamera;
 
         private void Awake()
         {
@@ -39,23 +40,26 @@ namespace yandereMod
 
         public void ReviveSinglePlayer(Vector3 position, PlayerControllerB p)
         {
-            RevivePlayer(position, p);
+            NetworkBehaviourReference netRef = new NetworkBehaviourReference(p);
+            RevivePlayer(position, netRef);
         }
 
-        private void RevivePlayer(Vector3 position, PlayerControllerB p)
+        private void RevivePlayer(Vector3 position, NetworkBehaviourReference netRef)
         {
             //IL_0002: Unknown result type (might be due to invalid IL or missing references)
             //IL_0003: Unknown result type (might be due to invalid IL or missing references)
-            RevivePlayerClientRpc(position, p);
+            RevivePlayerClientRpc(position, netRef);
             SyncLivingPlayersServerRpc();
         }
 
         [ClientRpc]
-        private void RevivePlayerClientRpc(Vector3 spawnPosition, PlayerControllerB p)
+        private void RevivePlayerClientRpc(Vector3 spawnPosition, NetworkBehaviourReference netRef)
         {
-            PlayerControllerB component = p;
+            PlayerControllerB component;
+            netRef.TryGet(out component);
             if (component == null)
             {
+                yandereAI.WriteToConsole("component is null!");
                 return;
             }
             int playerIndex = GetPlayerIndex(component.playerUsername);
@@ -158,6 +162,7 @@ namespace yandereMod
                 ((Behaviour)HUDManager.Instance.audioListenerLowPass).enabled = false;
                 HUDManager.Instance.RemoveSpectateUI();
                 HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
+                PlayerDraggingCamera.gameObject.SetActive(false);
                 StartOfRound.Instance.SetSpectateCameraToGameOverMode(false, localPlayerController);
             }
             RagdollGrabbableObject[] array = FindObjectsOfType<RagdollGrabbableObject>();

@@ -92,6 +92,8 @@ namespace yandereMod
         [Space(5f)]
         public int maxAsync = 50;
 
+        public Camera PlayerDraggingCamera;
+
         public static void WriteToConsole(string output)
         {
             Console.WriteLine("YandereAI: " + output);
@@ -660,6 +662,82 @@ namespace yandereMod
 
         }
 
+        private void YandereKillPlayer(PlayerControllerB p, Vector3 bodyVelocity, bool spawnBody = true, CauseOfDeath causeOfDeath = CauseOfDeath.Unknown, int deathAnimation = 0, Vector3 positionOffset = default(Vector3))
+        {
+            if (!p.isPlayerDead && p.AllowPlayerDeath())
+            {
+                p.isPlayerDead = true;
+                p.isPlayerControlled = false;
+                p.thisPlayerModelArms.enabled = false;
+                p.localVisor.position = p.playersManager.notSpawnedPosition.position;
+                p.DisablePlayerModel(p.NetworkObject.gameObject);
+                p.isInsideFactory = false;
+                p.IsInspectingItem = false;
+                p.inTerminalMenu = false;
+                p.twoHanded = false;
+                p.carryWeight = 1f;
+                p.fallValue = 0f;
+                p.fallValueUncapped = 0f;
+                p.takingFallDamage = false;
+                p.isSinking = false;
+                p.isUnderwater = false;
+                StartOfRound.Instance.drowningTimer = 1f;
+                HUDManager.Instance.setUnderwaterFilter = false;
+                //p.wasUnderwaterLastFrame = false;
+                p.sourcesCausingSinking = 0;
+                p.sinkingValue = 0f;
+                p.hinderedMultiplier = 1f;
+                p.isMovementHindered = 0;
+                p.inAnimationWithEnemy = null;
+                //p.positionOfDeath = base.transform.position;
+                if (spawnBody)
+                {
+                    Debug.DrawRay(base.transform.position, base.transform.up * 3f, Color.red, 10f);
+                    p.SpawnDeadBody((int)p.playerClientId, bodyVelocity, (int)causeOfDeath, p, deathAnimation, null, positionOffset);
+                }
+
+                p.SetInSpecialMenu(setInMenu: false);
+                p.physicsParent = null;
+                p.overridePhysicsParent = null;
+                p.lastSyncedPhysicsParent = null;
+                StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
+                //base.transform.SetParent(p.playersManager.playersContainer);
+                p.CancelSpecialTriggerAnimations();
+                //p.ChangeAudioListenerToObject(p.playersManager.spectateCamera.gameObject);
+                //SoundManager.Instance.SetDiageticMixerSnapshot();
+                //HUDManager.Instance.SetNearDepthOfFieldEnabled(enabled: true);
+                HUDManager.Instance.HUDAnimator.SetBool("biohazardDamage", value: false);
+                Debug.Log("Running yanderekill player function for LOCAL client, player object: " + base.gameObject.name);
+                //HUDManager.Instance.gameOverAnimator.SetTrigger("gameOver");
+                //HUDManager.Instance.HideHUD(hide: true);
+                //p.StopHoldInteractionOnTrigger();
+                //p.KillPlayerServerRpc((int)p.playerClientId, spawnBody, bodyVelocity, (int)causeOfDeath, deathAnimation, positionOffset);
+                PlayerDraggingCamera.gameObject.SetActive(true);
+                StartOfRound.Instance.SwitchCamera(PlayerDraggingCamera);
+                //p.isInGameOverAnimation = 1.5f;
+                //p.cursorTip.text = "";
+                //((Behaviour)(object)p.cursorIcon).enabled = false;
+                p.DropAllHeldItems(spawnBody);
+                p.DisableJetpackControlsLocally();
+            }
+        }
+
+        [ServerRpc]
+        private void KillPlayerServerRpc(int playerId, bool spawnBody, Vector3 bodyVelocity, int causeOfDeath, int deathAnimation = 0, Vector3 positionOffset = default(Vector3), Vector3 position = default(Vector3))
+        {
+            GameObject obj = UnityEngine.Object.Instantiate(StartOfRound.Instance.ragdollGrabbableObjectPrefab, position, Quaternion.identity);
+            obj.GetComponent<NetworkObject>().Spawn();
+            obj.GetComponent<RagdollGrabbableObject>().bodyID.Value = playerId;
+
+            KillPlayerClientRpc(playerId, spawnBody, bodyVelocity, causeOfDeath, deathAnimation, positionOffset);
+        }
+
+        [ClientRpc]
+        private void KillPlayerClientRpc(int playerId, bool spawnBody, Vector3 bodyVelocity, int causeOfDeath, int deathAnimation, Vector3 positionOffset)
+        {
+            YandereKillPlayer(StartOfRound.Instance.allPlayerScripts[playerId], Vector3.zero, spawnBody: true, CauseOfDeath.Strangulation);
+        }
+
         private IEnumerator killAnimation()
         {
             WalkieTalkie.TransmitOneShotAudio(crackNeckAudio, crackNeckSFX);
@@ -680,7 +758,8 @@ namespace yandereMod
             yield return new WaitForSeconds(0.65f);
             if (inSpecialAnimationWithPlayer != null)
             {
-                inSpecialAnimationWithPlayer.KillPlayer(Vector3.zero, spawnBody: true, CauseOfDeath.Strangulation);
+                //inSpecialAnimationWithPlayer.KillPlayer(Vector3.zero, spawnBody: true, CauseOfDeath.Strangulation);
+                KillPlayerServerRpc((int)inSpecialAnimationWithPlayer.playerClientId, true, Vector3.zero, causeOfDeath: (int)CauseOfDeath.Strangulation, position: inSpecialAnimationWithPlayer.transform.position);
                 inSpecialAnimationWithPlayer.snapToServerPosition = false;
                 float startTime = Time.timeSinceLevelLoad;
                 yield return new WaitUntil(() => inSpecialAnimationWithPlayer.deadBody != null || Time.timeSinceLevelLoad - startTime > 2f);
