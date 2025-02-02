@@ -498,6 +498,7 @@ namespace yandereMod
             {
                 creatureAngerVoice.volume = Mathf.Lerp(creatureAngerVoice.volume, 0f, 2f * Time.deltaTime);
             }
+            /*
             Vector3 localEulerAngles = animationContainer.localEulerAngles;
             if (carryingPlayerBody)
             {
@@ -512,6 +513,7 @@ namespace yandereMod
                 //creatureAnimator.SetLayerWeight(1, Mathf.Lerp(creatureAnimator.GetLayerWeight(1), 0f, 10f * Time.deltaTime));
             }
             animationContainer.localEulerAngles = localEulerAngles;
+            */
         }
 
         [ServerRpc]
@@ -540,6 +542,7 @@ namespace yandereMod
                 DeadBodyInfo bodyBeingCarriedCopy = bodyBeingCarried;
                 WriteToConsole("" + bodyBeingCarriedCopy.transform.position);
                 WriteToConsole("" + bodyBeingCarriedCopy.playerScript);
+                this.GetComponent<BoxCollider>().enabled = true;
                 ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
                 bodyBeingCarried = null;
                 creatureAnimator.SetBool("carryingBody", value: false);
