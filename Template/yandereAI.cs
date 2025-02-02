@@ -195,6 +195,7 @@ namespace yandereMod
             }
             AddToAngerMeter(AIIntervalTime);
             agent.speed = 0f;
+            creatureAnimator.SetBool("goIdle", true);
         }
 
         public void AddToAngerMeter(float amountToAdd)
@@ -250,6 +251,9 @@ namespace yandereMod
 
             angerMeter = angerTime;
             agent.speed = 9f;
+            creatureAnimator.SetBool("goIdle", false);
+            creatureAnimator.SetFloat("speedMultiplier", 3.0f);
+            
             SwitchToBehaviourStateOnLocalClient(2);
             waitAroundEntrancePosition = RoundManager.Instance.GetRandomNavMeshPositionInRadius(mainEntrancePosition, 6f);
 
@@ -330,6 +334,7 @@ namespace yandereMod
                         GameNetworkManager.Instance.localPlayerController.JumpToFearLevel(0.3f);
                     }
                     agent.speed = 0f;
+                    creatureAnimator.SetBool("goIdle", true);
                     evadeStealthTimer = 0f;
                 }
                 else if (evadeStealthTimer > 0.5f)
@@ -383,6 +388,7 @@ namespace yandereMod
                         {
                             AddToAngerMeter(Time.deltaTime * 1.5f);
                             agent.speed = 0f;
+                            creatureAnimator.SetBool("goIdle", true);
                         }
                         else
                         {
@@ -392,6 +398,7 @@ namespace yandereMod
                                 DropPlayerBody();
                                 AddToAngerMeter(0f);
                                 agent.speed = 0f;
+                                creatureAnimator.SetBool("goIdle", true);
                             }
                             else
                             {
@@ -403,10 +410,16 @@ namespace yandereMod
                                 if (carryingPlayerBody)
                                 {
                                     agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 7.25f, 4f, 9f);
+                                    creatureAnimator.SetBool("goIdle", false);
+                                    creatureAnimator.SetFloat("speedMultiplier", 3.0f);
+                                    
                                 }
                                 else
                                 {
-                                    agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 4.25f, 0f, 6f);
+                                    agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 4.25f, 0f, 5f);
+                                    creatureAnimator.SetBool("goIdle", false);
+                                    creatureAnimator.SetFloat("speedMultiplier", 1.0f);
+                                    
                                 }
                             }
                         }
@@ -420,7 +433,7 @@ namespace yandereMod
                         CalculateAnimationDirection();
                         break;
                     }
-                    creatureAnimator.SetFloat("speedMultiplier", Vector3.ClampMagnitude(base.transform.position - previousPosition, 1f).sqrMagnitude / (Time.deltaTime * 2f));
+                    //creatureAnimator.SetFloat("speedMultiplier", Vector3.ClampMagnitude(base.transform.position - previousPosition, 1f).sqrMagnitude / (Time.deltaTime * 2f));
                     previousPosition = base.transform.position;
                     break;
                 case 0:
@@ -445,9 +458,12 @@ namespace yandereMod
                             Debug.Log("Yandere: Dropped player body");
                         }
                     }
-                    creatureAnimator.SetFloat("speedMultiplier", Vector3.ClampMagnitude(base.transform.position - previousPosition, 1f).sqrMagnitude / (Time.deltaTime / 4f));
+                    creatureAnimator.SetBool("goIdle", false);
+                    creatureAnimator.SetFloat("speedMultiplier", 1.0f);
+                    
+                    //creatureAnimator.SetFloat("speedMultiplier", Vector3.ClampMagnitude(base.transform.position - previousPosition, 1f).sqrMagnitude / (Time.deltaTime / 4f));
                     previousPosition = base.transform.position;
-                    agent.speed = 6f;
+                    agent.speed = 5f;
                     break;
                 case 2:
                     {
@@ -474,6 +490,7 @@ namespace yandereMod
                         if (stunNormalizedTimer > 0f)
                         {
                             //creatureAnimator.SetLayerWeight(2, 1f);
+                            creatureAnimator.SetBool("goIdle", true);
                             agent.speed = 0f;
                             angerMeter = 6f;
                         }
@@ -481,6 +498,9 @@ namespace yandereMod
                         {
                             //creatureAnimator.SetLayerWeight(2, 0f);
                             agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 1.2f, 3f, 12f);
+                            creatureAnimator.SetBool("goIdle", false);
+                            creatureAnimator.SetFloat("speedMultiplier", 3.0f);
+                            
                         }
                         angerMeter -= Time.deltaTime;
                         if (base.IsOwner && angerMeter <= 0f)
