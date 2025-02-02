@@ -80,8 +80,8 @@ namespace yandereMod
                 component.isPlayerDead = false;
                 component.isPlayerControlled = true;
                 component.isInElevator = true;
-                component.isInHangarShipRoom = true;
-                component.isInsideFactory = false;
+                //component.isInHangarShipRoom = true;
+                //component.isInsideFactory = false;
                 component.parentedToElevatorLastFrame = false;
                 component.overrideGameOverSpectatePivot = null;
                 if (((NetworkBehaviour)component).IsOwner)

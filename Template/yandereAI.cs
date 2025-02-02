@@ -562,7 +562,6 @@ namespace yandereMod
                 DeadBodyInfo bodyBeingCarriedCopy = bodyBeingCarried;
                 WriteToConsole("" + bodyBeingCarriedCopy.transform.position);
                 WriteToConsole("" + bodyBeingCarriedCopy.playerScript);
-                this.GetComponent<BoxCollider>().enabled = true;
                 ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
                 bodyBeingCarried = null;
                 creatureAnimator.SetBool("carryingBody", value: false);
@@ -596,11 +595,72 @@ namespace yandereMod
             previousPosition = base.transform.position;
         }
 
+        public bool PlayerIsTargetable2(PlayerControllerB playerScript, bool cannotBeInShip = false, bool overrideInsideFactoryCheck = false)
+        {
+            if (cannotBeInShip && playerScript.isInHangarShipRoom)
+            {
+                WriteToConsole("1");
+                return false;
+            }
+
+            if (playerScript.isPlayerControlled && !playerScript.isPlayerDead && playerScript.inAnimationWithEnemy == null && (overrideInsideFactoryCheck || playerScript.isInsideFactory != isOutside) && playerScript.sinkingValue < 0.73f)
+            {
+                if (isOutside && StartOfRound.Instance.hangarDoorsClosed)
+                {
+                    return playerScript.isInHangarShipRoom == isInsidePlayerShip;
+                }
+
+                return true;
+            }
+
+            WriteToConsole("" + playerScript.isPlayerControlled + " : " + !playerScript.isPlayerDead + " : " + (playerScript.inAnimationWithEnemy == null));
+            WriteToConsole("2");
+            return false;
+        }
+
+        public PlayerControllerB MeetsStandardPlayerCollisionConditions2(Collider other, bool inKillAnimation = false, bool overrideIsInsideFactoryCheck = false)
+        {
+            if (isEnemyDead)
+            {
+                return null;
+            }
+
+            if (!ventAnimationFinished)
+            {
+                return null;
+            }
+
+            if (inKillAnimation)
+            {
+                return null;
+            }
+
+            if (stunNormalizedTimer >= 0f)
+            {
+                return null;
+            }
+
+            PlayerControllerB component = other.gameObject.GetComponent<PlayerControllerB>();
+            if (component == null || component != GameNetworkManager.Instance.localPlayerController)
+            {
+                return null;
+            }
+
+            if (!PlayerIsTargetable2(component, cannotBeInShip: false, overrideIsInsideFactoryCheck))
+            {
+                Debug.Log("Player is not targetable");
+                return null;
+            }
+
+            return component;
+        }
+
         public void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player"))
             {
-                PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions(other, inKillAnimation || startingKillAnimationLocalClient || carryingPlayerBody);
+                PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions2(other, inKillAnimation || startingKillAnimationLocalClient || carryingPlayerBody, true);
+                WriteToConsole("" + playerControllerB);
                 if (playerControllerB != null)
                 {
                     KillPlayerAnimationServerRpc((int)playerControllerB.playerClientId);
