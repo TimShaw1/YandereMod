@@ -6,6 +6,8 @@ using System.Reflection;
 using UnityEngine;
 using LethalLib.Modules;
 using System;
+using DunGen;
+using System.Collections.Generic;
 
 namespace yandereMod;
 
@@ -89,6 +91,24 @@ public class Plugin : BaseUnityPlugin
         Log.LogInfo($"Applying patches...");
         ApplyPluginPatch();
         Log.LogInfo($"Patches applied");
+    }
+
+    private void InjectTiles(System.Random randomStream, ref List<InjectedTile> tilesToInject)
+    {
+        bool isOnMainPath = false;
+        float pathDepth = 0.5f;
+        float branchDepth = 1.0f;
+        //var tile = new InjectedTile(MyTileSet, isOnMainPath, pathDepth,
+        //branchDepth); tilesToInject.Add(tile);
+    }
+
+    [HarmonyPatch(typeof(DungeonGenerator), "GatherTilesToInject")]
+    class GenerateNewFloorPatch
+    {
+        static void Prefix(DungeonGenerator __instance)
+        {
+            //__instance.TileInjectionMethods += SomeMethod();
+        }
     }
 
     /// <summary>
