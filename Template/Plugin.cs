@@ -8,6 +8,7 @@ using LethalLib.Modules;
 using System;
 using DunGen;
 using System.Collections.Generic;
+using YourThunderstoreTeam;
 
 namespace yandereMod;
 
@@ -22,6 +23,8 @@ public class Plugin : BaseUnityPlugin
     private readonly Harmony _harmony = new("YandereMod");
 
     public static string assembly_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+    static TileSet MyTileSet;
 
     static void WriteToConsole(string output)
     {
@@ -78,28 +81,24 @@ public class Plugin : BaseUnityPlugin
             WriteToConsole(asset);
         }
         EnemyType val = Assets.MainAssetBundle.LoadAsset<EnemyType>("assets/yandereenemy.asset");
-        WriteToConsole("2: " + (val == null));
         TerminalNode val2 = Assets.MainAssetBundle.LoadAsset<TerminalNode>("assets/yandereterminalnode.asset");
-        WriteToConsole("3: " + (val2 == null));
-        TerminalKeyword val3 = Assets.MainAssetBundle.LoadAsset<TerminalKeyword>("yandere");
-        WriteToConsole("4: " + (val2 == null));
+        TerminalKeyword val3 = Assets.MainAssetBundle.LoadAsset<TerminalKeyword>("assets/yandereterminalkeyword.asset");
+        MyTileSet = Assets.MainAssetBundle.LoadAsset<TileSet>("assets/yanderetileset.asset");
         // breaks here
         LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(val.enemyPrefab);
-        WriteToConsole("5");
         Enemies.RegisterEnemy(val, 22, (Levels.LevelTypes)(-1), (Enemies.SpawnType)0, val2, val3);
-        WriteToConsole("6");
         Log.LogInfo($"Applying patches...");
         ApplyPluginPatch();
         Log.LogInfo($"Patches applied");
     }
 
-    private void InjectTiles(System.Random randomStream, ref List<InjectedTile> tilesToInject)
+    private static void InjectTiles(RandomStream randomStream, ref List<InjectedTile> tilesToInject)
     {
         bool isOnMainPath = false;
         float pathDepth = 0.5f;
-        float branchDepth = 1.0f;
-        //var tile = new InjectedTile(MyTileSet, isOnMainPath, pathDepth,
-        //branchDepth); tilesToInject.Add(tile);
+        float branchDepth = 0.5f;
+        var tile = new InjectedTile(MyTileSet, isOnMainPath, pathDepth, branchDepth, true); 
+        tilesToInject.Add(tile);
     }
 
     [HarmonyPatch(typeof(DungeonGenerator), "GatherTilesToInject")]
@@ -107,7 +106,19 @@ public class Plugin : BaseUnityPlugin
     {
         static void Prefix(DungeonGenerator __instance)
         {
-            //__instance.TileInjectionMethods += SomeMethod();
+            __instance.TileInjectionMethods += InjectTiles;
+        }
+    }
+
+    [HarmonyPatch(typeof(DoorwaySocket), "CanSocketsConnect")]
+    class DoorwaySocketPatch()
+    {
+        static void Postfix(ref bool __result, DoorwaySocket a, DoorwaySocket b)
+        {
+            if (a.Size == b.Size)
+            {
+                __result = true;
+            }
         }
     }
 
