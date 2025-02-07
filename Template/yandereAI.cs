@@ -131,6 +131,9 @@ namespace yandereMod
                 }
                 if (currentBehaviourStateIndex == 1)
                 {
+                    if (roomToTarget != null)
+                        favoriteSpot = roomToTarget;
+
                     if (favoriteSpot != null && carryingPlayerBody)
                     {
                         if (mostOptimalDistance < 5f || PathIsIntersectedByLineOfSight(favoriteSpot.position))
@@ -171,6 +174,8 @@ namespace yandereMod
                     favoriteSpot = transform;
                 }
                 targetNode = transform;
+                if (carryingPlayerBody)
+                    transform = roomToTarget;
                 SetDestinationToPosition(transform.position, checkForPath: true);
             }
             base.DoAIInterval();

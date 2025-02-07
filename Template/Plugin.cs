@@ -95,7 +95,7 @@ public class Plugin : BaseUnityPlugin
         Log.LogInfo($"Patches applied");
     }
 
-    [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.BeginEnemySpawning))]
+    [HarmonyPatch(typeof(RoundManager), "PlotOutEnemiesForNextHour")]
     class EnemySpawnPatch()
     {
         static void Postfix(RoundManager __instance)
@@ -107,11 +107,11 @@ public class Plugin : BaseUnityPlugin
                 {
                     if (tile.gameObject.name.Contains("SmallRoom2"))
                     {
-                        foreach (GameObject child in tile.gameObject.transform)
+                        foreach (Transform child in tile.gameObject.transform)
                         {
-                            if (child.name.Contains("AINode"))
+                            if (child.gameObject.name.Contains("AINode"))
                             {
-                                Instance.yandereRoomToTarget = child.transform;
+                                Instance.yandereRoomToTarget = child;
                                 return;
                             }
                         }
@@ -129,6 +129,7 @@ public class Plugin : BaseUnityPlugin
         static void Postfix(yandereAI __instance)
         {
             __instance.roomToTarget = Instance.yandereRoomToTarget;
+            WriteToConsole("Set room to target as: " + Instance.yandereRoomToTarget.gameObject.name);
         }
     }
 
