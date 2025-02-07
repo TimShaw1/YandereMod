@@ -95,6 +95,8 @@ namespace yandereMod
 
         public Camera PlayerDraggingCamera;
 
+        public Transform roomToTarget;
+
         public static void WriteToConsole(string output)
         {
             Console.WriteLine("YandereAI: " + output);

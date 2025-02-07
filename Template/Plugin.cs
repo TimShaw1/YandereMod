@@ -9,6 +9,7 @@ using System;
 using DunGen;
 using System.Collections.Generic;
 using YourThunderstoreTeam;
+using Unity.Netcode;
 
 namespace yandereMod;
 
@@ -25,6 +26,8 @@ public class Plugin : BaseUnityPlugin
     public static string assembly_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
     static TileSet MyTileSet;
+
+    public Transform yandereRoomToTarget;
 
     static void WriteToConsole(string output)
     {
@@ -92,33 +95,40 @@ public class Plugin : BaseUnityPlugin
         Log.LogInfo($"Patches applied");
     }
 
-    private static void InjectTiles(RandomStream randomStream, ref List<InjectedTile> tilesToInject)
+    [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.BeginEnemySpawning))]
+    class EnemySpawnPatch()
     {
-        bool isOnMainPath = false;
-        float pathDepth = 0.5f;
-        float branchDepth = 0.5f;
-        var tile = new InjectedTile(MyTileSet, isOnMainPath, pathDepth, branchDepth, true); 
-        tilesToInject.Add(tile);
-    }
-
-    [HarmonyPatch(typeof(DungeonGenerator), "GatherTilesToInject")]
-    class GenerateNewFloorPatch
-    {
-        static void Prefix(DungeonGenerator __instance)
+        static void Postfix(RoundManager __instance)
         {
-            __instance.TileInjectionMethods += InjectTiles;
+            if (__instance.IsServer)
+            {
+                var tiles = FindObjectsOfType<Tile>();
+                foreach (var tile in tiles)
+                {
+                    if (tile.gameObject.name.Contains("SmallRoom2"))
+                    {
+                        foreach (GameObject child in tile.gameObject.transform)
+                        {
+                            if (child.name.Contains("AINode"))
+                            {
+                                Instance.yandereRoomToTarget = child.transform;
+                                return;
+                            }
+                        }
+                    }
+                }
+                WriteToConsole("No suitable target room found for yandere.");
+                // Consider doing this for each round of enemies?
+            }
         }
     }
 
-    [HarmonyPatch(typeof(DoorwaySocket), "CanSocketsConnect")]
-    class DoorwaySocketPatch()
+    [HarmonyPatch(typeof(yandereAI), "Start")]
+    class YandereStartPatch()
     {
-        static void Postfix(ref bool __result, DoorwaySocket a, DoorwaySocket b)
+        static void Postfix(yandereAI __instance)
         {
-            if (a.Size == b.Size)
-            {
-                __result = true;
-            }
+            __instance.roomToTarget = Instance.yandereRoomToTarget;
         }
     }
 
