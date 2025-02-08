@@ -103,33 +103,32 @@ public class Plugin : BaseUnityPlugin
     {
         static void Postfix(RoundManager __instance)
         {
-            if (__instance.IsServer)
+            
+            var tiles = FindObjectsOfType<Tile>();
+            foreach (var tile in tiles)
             {
-                var tiles = FindObjectsOfType<Tile>();
-                foreach (var tile in tiles)
+                if (tile.gameObject.name.Contains("SmallRoom2"))
                 {
-                    if (tile.gameObject.name.Contains("SmallRoom2"))
+                    foreach (Transform child in tile.gameObject.transform)
                     {
-                        foreach (Transform child in tile.gameObject.transform)
+                        if (child.gameObject.name.Contains("AINode"))
                         {
-                            if (child.gameObject.name.Contains("AINode"))
+                            Instance.yandereRoomToTarget = child;
+                            if (!chairSpawned)
                             {
-                                Instance.yandereRoomToTarget = child;
-                                if (!chairSpawned)
-                                {
-                                    var chair = Instantiate(yandereChair, tile.gameObject.transform.position + new Vector3(0, 2, 0), tile.gameObject.transform.rotation, tile.gameObject.transform);
-                                    // Move chair "forwards" (from where you would look when sitting) 4 units
-                                    chair.transform.position += chair.transform.forward * -4;
-                                    chairSpawned = true;
-                                }
-                                return;
+                                var chair = Instantiate(yandereChair, tile.gameObject.transform.position + new Vector3(0, 2, 0), tile.gameObject.transform.rotation, tile.gameObject.transform);
+                                // Move chair "forwards" (from where you would look when sitting) 4 units
+                                chair.transform.position += chair.transform.forward * -4;
+                                chairSpawned = true;
                             }
+                            return;
                         }
                     }
                 }
-                WriteToConsole("No suitable target room found for yandere.");
-                // Consider doing this for each round of enemies?
             }
+            WriteToConsole("No suitable target room found for yandere.");
+            // Consider doing this for each round of enemies?
+            
         }
     }
 
