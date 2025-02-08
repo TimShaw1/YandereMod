@@ -581,6 +581,7 @@ namespace yandereMod
                 chairInRoom.gameObject.GetComponent<BoxCollider>().enabled = false;
                 chairInRoom.GetComponentInChildren<BoxCollider>().enabled = false;
                 ReviveManager.Instance.ReviveSinglePlayer(chairInRoom != null && Vector3.Distance(transform.position, chairInRoom.position) < 6f ? chairInRoom.transform.position + chairInRoom.forward * -0.9f : bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
+                //bodyBeingCarriedCopy.playerScript.isPlayerControlled = false;
                 bodyBeingCarried = null;
                 creatureAnimator.SetBool("carryingBody", value: false);
 
