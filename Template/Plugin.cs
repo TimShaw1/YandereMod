@@ -29,6 +29,8 @@ public class Plugin : BaseUnityPlugin
 
     public Transform yandereRoomToTarget;
 
+    static GameObject yandereChair;
+
     static void WriteToConsole(string output)
     {
         Console.WriteLine("YandereMod: " + output);
@@ -87,7 +89,7 @@ public class Plugin : BaseUnityPlugin
         TerminalNode val2 = Assets.MainAssetBundle.LoadAsset<TerminalNode>("assets/yandereterminalnode.asset");
         TerminalKeyword val3 = Assets.MainAssetBundle.LoadAsset<TerminalKeyword>("assets/yandereterminalkeyword.asset");
         MyTileSet = Assets.MainAssetBundle.LoadAsset<TileSet>("assets/yanderetileset.asset");
-        // breaks here
+        yandereChair = Assets.MainAssetBundle.LoadAsset<GameObject>("assets/yanderechair.prefab");
         LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(val.enemyPrefab);
         Enemies.RegisterEnemy(val, 22, (Levels.LevelTypes)(-1), (Enemies.SpawnType)0, val2, val3);
         Log.LogInfo($"Applying patches...");
