@@ -30,6 +30,7 @@ public class Plugin : BaseUnityPlugin
     public Transform yandereRoomToTarget;
 
     static GameObject yandereChair;
+    static bool chairSpawned = false;
 
     static void WriteToConsole(string output)
     {
@@ -114,6 +115,13 @@ public class Plugin : BaseUnityPlugin
                             if (child.gameObject.name.Contains("AINode"))
                             {
                                 Instance.yandereRoomToTarget = child;
+                                if (!chairSpawned)
+                                {
+                                    var chair = Instantiate(yandereChair, tile.gameObject.transform.position + new Vector3(0, 2, 0), tile.gameObject.transform.rotation, tile.gameObject.transform);
+                                    // Move chair "forwards" (from where you would look when sitting) 4 units
+                                    chair.transform.position += chair.transform.forward * -4;
+                                    chairSpawned = true;
+                                }
                                 return;
                             }
                         }
