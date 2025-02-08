@@ -79,7 +79,7 @@ namespace yandereMod
             {
                 component.isPlayerDead = false;
                 component.isPlayerControlled = true;
-                component.isInElevator = true;
+                //component.isInElevator = true;
                 //component.isInHangarShipRoom = true;
                 //component.isInsideFactory = false;
                 component.parentedToElevatorLastFrame = false;
@@ -89,6 +89,7 @@ namespace yandereMod
                     StartOfRound.Instance.SetPlayerObjectExtrapolate(false);
                 }
                 component.TeleportPlayer(spawnPosition, false, 0f, false, true);
+                component.GetComponent<Collider>().enabled = true;
                 component.setPositionOfDeadPlayer = false;
                 component.DisablePlayerModel(StartOfRound.Instance.allPlayerObjects[playerIndex], true, true);
                 ((Behaviour)component.helmetLight).enabled = false;
@@ -189,12 +190,14 @@ namespace yandereMod
             {
                 Destroy(((Component)array2[j]).gameObject);
             }
+            /*
             if (((NetworkBehaviour)this).IsServer)
             {
                 StartOfRound instance = StartOfRound.Instance;
                 instance.livingPlayers++;
                 StartOfRound.Instance.allPlayersDead = false;
             }
+            */
             StartOfRound.Instance.UpdatePlayerVoiceEffects();
         }
 

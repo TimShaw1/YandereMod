@@ -31,6 +31,7 @@ public class Plugin : BaseUnityPlugin
 
     static GameObject yandereChair;
     static bool chairSpawned = false;
+    static Transform chairLocation;
 
     static void WriteToConsole(string output)
     {
@@ -122,6 +123,7 @@ public class Plugin : BaseUnityPlugin
                                     // Move chair "forwards" (from where you would look when sitting) 4 units
                                     chair.transform.position += chair.transform.forward * -4;
                                     chairSpawned = true;
+                                    chairLocation = chair.transform;
                                 }
                                 return;
                             }
@@ -140,6 +142,7 @@ public class Plugin : BaseUnityPlugin
         static void Postfix(yandereAI __instance)
         {
             __instance.roomToTarget = Instance.yandereRoomToTarget;
+            __instance.chairInRoom = chairLocation;
             WriteToConsole("Set room to target as: " + Instance.yandereRoomToTarget.gameObject.name);
         }
     }
