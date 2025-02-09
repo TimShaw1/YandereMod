@@ -594,9 +594,14 @@ namespace yandereMod
                 chairInRoom.GetComponentInChildren<BoxCollider>().enabled = false;
                 if (Vector3.Distance(transform.position, chairInRoom.position) < 6f)
                 {
-                    ReviveManager.Instance.ReviveSinglePlayer(chairInRoom.transform.position + chairInRoom.forward * -0.9f, bodyBeingCarriedCopy.playerScript);
-                
-                    bodyBeingCarriedCopy.playerScript.thisController.enabled = false;
+                    foreach (Transform t in chairInRoom)
+                    {
+                        if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera"))
+                        {
+                            t.gameObject.SetActive(true);
+                        }
+                        PlayerDraggingCamera.gameObject.SetActive(false);
+                    }
                 }
                 else
                 {
