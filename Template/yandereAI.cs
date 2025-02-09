@@ -423,7 +423,7 @@ namespace yandereMod
                                     agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 7.25f, 4f, 9f);
                                     creatureAnimator.SetBool("goIdle", false);
                                     creatureAnimator.SetFloat("speedMultiplier", 3.0f);
-                                    if (Vector3.Distance(transform.position, chairInRoom.position) < 5f)
+                                    if (Vector3.Distance(transform.position, chairInRoom.position) < 4f)
                                     {
                                         DropPlayerBody();
                                     }
@@ -524,6 +524,18 @@ namespace yandereMod
                         }
                         break;
                     }
+
+                case 3:
+                    {
+                        agent.speed = 12f;
+                        creatureAnimator.SetBool("goIdle", false);
+                        creatureAnimator.SetFloat("speedMultiplier", 3.0f);
+                        if (Vector3.Distance(transform.position, chairInRoom.position) < 4f)
+                        {
+                            DropPlayerBody();
+                        }
+                        break;
+                    }
             }
             if (isInAngerMode)
             {
@@ -580,8 +592,16 @@ namespace yandereMod
                 GetComponent<BoxCollider>().enabled = false;
                 chairInRoom.gameObject.GetComponent<BoxCollider>().enabled = false;
                 chairInRoom.GetComponentInChildren<BoxCollider>().enabled = false;
-                ReviveManager.Instance.ReviveSinglePlayer(chairInRoom != null && Vector3.Distance(transform.position, chairInRoom.position) < 6f ? chairInRoom.transform.position + chairInRoom.forward * -0.9f : bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
-                //bodyBeingCarriedCopy.playerScript.isPlayerControlled = false;
+                if (Vector3.Distance(transform.position, chairInRoom.position) < 6f)
+                {
+                    ReviveManager.Instance.ReviveSinglePlayer(chairInRoom.transform.position + chairInRoom.forward * -0.9f, bodyBeingCarriedCopy.playerScript);
+                
+                    bodyBeingCarriedCopy.playerScript.thisController.enabled = false;
+                }
+                else
+                {
+                    ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
+                }
                 bodyBeingCarried = null;
                 creatureAnimator.SetBool("carryingBody", value: false);
 
@@ -826,6 +846,7 @@ namespace yandereMod
                 p.DropAllHeldItems(spawnBody);
                 p.DisableJetpackControlsLocally();
 
+                SwitchToBehaviourState(3);
                 SetDestinationToPosition(chairInRoom.position);
             }
         }
@@ -970,7 +991,7 @@ namespace yandereMod
                 }
                 evadeStealthTimer = 0f;
             }
-            if (carryingPlayerBody && favoriteSpot != null && Vector3.Distance(base.transform.position, favoriteSpot.transform.position) < 5f)
+            if (carryingPlayerBody && favoriteSpot != null && Vector3.Distance(base.transform.position, favoriteSpot.transform.position) < 4f)
             {
                 DropPlayerBody();
             }
