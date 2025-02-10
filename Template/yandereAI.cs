@@ -530,7 +530,7 @@ namespace yandereMod
                         agent.speed = 12f;
                         creatureAnimator.SetBool("goIdle", false);
                         creatureAnimator.SetFloat("speedMultiplier", 3.0f);
-                        if (Vector3.Distance(transform.position, chairInRoom.position) < 4f)
+                        if (Vector3.Distance(transform.position, chairInRoom.position) < 3.9f)
                         {
                             DropPlayerBody();
                         }
@@ -589,29 +589,37 @@ namespace yandereMod
                 DeadBodyInfo bodyBeingCarriedCopy = bodyBeingCarried;
                 WriteToConsole("" + bodyBeingCarriedCopy.transform.position);
                 WriteToConsole("" + bodyBeingCarriedCopy.playerScript);
-                GetComponent<BoxCollider>().enabled = false;
-                chairInRoom.gameObject.GetComponent<BoxCollider>().enabled = false;
-                chairInRoom.GetComponentInChildren<BoxCollider>().enabled = false;
-                if (Vector3.Distance(transform.position, chairInRoom.position) < 6f)
+                bodyBeingCarried = null;
+                creatureAnimator.SetBool("carryingBody", value: false);
+
+                if (chairInRoom != null)
                 {
-                    foreach (Transform t in chairInRoom)
+                    GetComponent<BoxCollider>().enabled = false;
+                    chairInRoom.gameObject.GetComponent<BoxCollider>().enabled = false;
+                    if (Vector3.Distance(transform.position, chairInRoom.position) < 5f)
                     {
-                        if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera"))
+                        foreach (Transform t in chairInRoom)
                         {
-                            t.gameObject.SetActive(true);
+                            if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera"))
+                            {
+                                t.gameObject.SetActive(true);
+                            }
+                            PlayerDraggingCamera.gameObject.SetActive(false);
                         }
-                        PlayerDraggingCamera.gameObject.SetActive(false);
                     }
+                    else
+                    {
+                        ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
+                    }
+
+
+                    SetDestinationToPosition(chairInRoom.transform.position + chairInRoom.forward * -6f);
+                    GetComponent<BoxCollider>().enabled = true;
                 }
                 else
                 {
                     ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
                 }
-                bodyBeingCarried = null;
-                creatureAnimator.SetBool("carryingBody", value: false);
-
-                SetDestinationToPosition(chairInRoom.transform.position + chairInRoom.forward * -6f);
-                GetComponent<BoxCollider>().enabled = true;
             }
         }
 
