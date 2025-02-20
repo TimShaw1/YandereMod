@@ -55,150 +55,157 @@ namespace yandereMod
         [ClientRpc]
         private void RevivePlayerClientRpc(Vector3 spawnPosition, NetworkBehaviourReference netRef)
         {
-            PlayerControllerB component;
-            netRef.TryGet(out component);
-            if (component == null)
+            try
             {
-                yandereAI.WriteToConsole("component is null!");
-                return;
-            }
-            int playerIndex = GetPlayerIndex(component.playerUsername);
-            component.ResetPlayerBloodObjects(component.isPlayerDead || component.isPlayerControlled);
-            component.isClimbingLadder = false;
-            component.clampLooking = false;
-            component.inVehicleAnimation = false;
-            component.disableMoveInput = false;
-            component.disableLookInput = false;
-            component.disableInteract = false;
-            component.ResetZAndXRotation();
-            ((Collider)component.thisController).enabled = true;
-            component.health = 100;
-            component.hasBeenCriticallyInjured = false;
-            component.disableSyncInAnimation = false;
-            if (component.isPlayerDead)
-            {
-                component.isPlayerDead = false;
-                component.isPlayerControlled = true;
-                //component.isInElevator = true;
-                //component.isInHangarShipRoom = true;
-                //component.isInsideFactory = false;
-                component.parentedToElevatorLastFrame = false;
-                component.overrideGameOverSpectatePivot = null;
-                if (((NetworkBehaviour)component).IsOwner)
+                PlayerControllerB component;
+                netRef.TryGet(out component);
+                if (component == null)
                 {
-                    StartOfRound.Instance.SetPlayerObjectExtrapolate(false);
+                    yandereAI.WriteToConsole("component is null!");
+                    return;
                 }
-                component.TeleportPlayer(spawnPosition, false, 0f, false, true);
-                component.GetComponent<Collider>().enabled = true;
-                component.setPositionOfDeadPlayer = false;
-                component.DisablePlayerModel(StartOfRound.Instance.allPlayerObjects[playerIndex], true, true);
-                ((Behaviour)component.helmetLight).enabled = false;
-                component.Crouch(false);
-                component.criticallyInjured = false;
-                if (component.playerBodyAnimator != null)
-                {
-                    component.playerBodyAnimator.SetBool("Limp", false);
-                }
-                component.bleedingHeavily = false;
-                component.activatingItem = false;
-                component.twoHanded = false;
-                component.inShockingMinigame = false;
-                component.inSpecialInteractAnimation = false;
-                component.freeRotationInInteractAnimation = false;
-                component.inAnimationWithEnemy = null;
-                component.holdingWalkieTalkie = false;
-                component.speakingToWalkieTalkie = false;
-                component.isSinking = false;
-                component.isUnderwater = false;
-                component.sinkingValue = 0f;
-                component.statusEffectAudio.Stop();
-                component.DisableJetpackControlsLocally();
+                int playerIndex = GetPlayerIndex(component.playerUsername);
+                component.ResetPlayerBloodObjects(component.isPlayerDead || component.isPlayerControlled);
+                component.isClimbingLadder = false;
+                component.clampLooking = false;
+                component.inVehicleAnimation = false;
+                component.disableMoveInput = false;
+                component.disableLookInput = false;
+                component.disableInteract = false;
+                component.ResetZAndXRotation();
+                ((Collider)component.thisController).enabled = true;
                 component.health = 100;
-                component.mapRadarDotAnimator.SetBool("dead", false);
-                component.externalForceAutoFade = Vector3.zero;
-                if (((NetworkBehaviour)component).IsOwner)
+                component.hasBeenCriticallyInjured = false;
+                component.disableSyncInAnimation = false;
+                if (component.isPlayerDead)
                 {
-                    HUDManager.Instance.gasHelmetAnimator.SetBool("gasEmitting", false);
-                    component.hasBegunSpectating = false;
+                    component.isPlayerDead = false;
+                    component.isPlayerControlled = true;
+                    //component.isInElevator = true;
+                    //component.isInHangarShipRoom = true;
+                    //component.isInsideFactory = false;
+                    component.parentedToElevatorLastFrame = false;
+                    component.overrideGameOverSpectatePivot = null;
+                    if (((NetworkBehaviour)component).IsOwner)
+                    {
+                        StartOfRound.Instance.SetPlayerObjectExtrapolate(false);
+                    }
+                    component.TeleportPlayer(spawnPosition, false, 0f, false, true);
+                    component.GetComponent<Collider>().enabled = true;
+                    component.setPositionOfDeadPlayer = false;
+                    component.DisablePlayerModel(StartOfRound.Instance.allPlayerObjects[playerIndex], true, true);
+                    ((Behaviour)component.helmetLight).enabled = false;
+                    component.Crouch(false);
+                    component.criticallyInjured = false;
+                    if (component.playerBodyAnimator != null)
+                    {
+                        component.playerBodyAnimator.SetBool("Limp", false);
+                    }
+                    component.bleedingHeavily = false;
+                    component.activatingItem = false;
+                    component.twoHanded = false;
+                    component.inShockingMinigame = false;
+                    component.inSpecialInteractAnimation = false;
+                    component.freeRotationInInteractAnimation = false;
+                    component.inAnimationWithEnemy = null;
+                    component.holdingWalkieTalkie = false;
+                    component.speakingToWalkieTalkie = false;
+                    component.isSinking = false;
+                    component.isUnderwater = false;
+                    component.sinkingValue = 0f;
+                    component.statusEffectAudio.Stop();
+                    component.DisableJetpackControlsLocally();
+                    component.health = 100;
+                    component.mapRadarDotAnimator.SetBool("dead", false);
+                    component.externalForceAutoFade = Vector3.zero;
+                    if (((NetworkBehaviour)component).IsOwner)
+                    {
+                        HUDManager.Instance.gasHelmetAnimator.SetBool("gasEmitting", false);
+                        component.hasBegunSpectating = false;
+                        HUDManager.Instance.RemoveSpectateUI();
+                        HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
+                        component.hinderedMultiplier = 1f;
+                        component.isMovementHindered = 0;
+                        component.sourcesCausingSinking = 0;
+                        component.reverbPreset = StartOfRound.Instance.shipReverb;
+                    }
+                }
+                yandereAI.WriteToConsole("Past first part");
+                SoundManager.Instance.earsRingingTimer = 0f;
+                component.voiceMuffledByEnemy = false;
+                SoundManager.Instance.playerVoicePitchTargets[playerIndex] = 1f;
+                SoundManager.Instance.SetPlayerPitch(1f, playerIndex);
+                if (component.currentVoiceChatIngameSettings == null)
+                {
+                    StartOfRound.Instance.RefreshPlayerVoicePlaybackObjects();
+                }
+                if (component.currentVoiceChatIngameSettings != null)
+                {
+                    if (component.currentVoiceChatIngameSettings.voiceAudio == null)
+                    {
+                        component.currentVoiceChatIngameSettings.InitializeComponents();
+                    }
+                    if (component.currentVoiceChatIngameSettings.voiceAudio != null)
+                    {
+                        ((Component)component.currentVoiceChatIngameSettings.voiceAudio).GetComponent<OccludeAudio>().overridingLowPass = false;
+                    }
+                }
+                PlayerControllerB localPlayerController = GameNetworkManager.Instance.localPlayerController;
+                if (localPlayerController == component)
+                {
+                    localPlayerController.bleedingHeavily = false;
+                    localPlayerController.criticallyInjured = false;
+                    if (localPlayerController.playerBodyAnimator != null)
+                    {
+                        localPlayerController.playerBodyAnimator.SetBool("Limp", false);
+                    }
+                    localPlayerController.health = 100;
+                    HUDManager.Instance.UpdateHealthUI(100, false);
+                    localPlayerController.spectatedPlayerScript = null;
+                    ((Behaviour)HUDManager.Instance.audioListenerLowPass).enabled = false;
                     HUDManager.Instance.RemoveSpectateUI();
                     HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
-                    component.hinderedMultiplier = 1f;
-                    component.isMovementHindered = 0;
-                    component.sourcesCausingSinking = 0;
-                    component.reverbPreset = StartOfRound.Instance.shipReverb;
+                    PlayerDraggingCamera.gameObject.SetActive(false);
+                    StartOfRound.Instance.SetSpectateCameraToGameOverMode(false, localPlayerController);
                 }
-            }
-            yandereAI.WriteToConsole("Past first part");
-            SoundManager.Instance.earsRingingTimer = 0f;
-            component.voiceMuffledByEnemy = false;
-            SoundManager.Instance.playerVoicePitchTargets[playerIndex] = 1f;
-            SoundManager.Instance.SetPlayerPitch(1f, playerIndex);
-            if (component.currentVoiceChatIngameSettings == null)
-            {
-                StartOfRound.Instance.RefreshPlayerVoicePlaybackObjects();
-            }
-            if (component.currentVoiceChatIngameSettings != null)
-            {
-                if (component.currentVoiceChatIngameSettings.voiceAudio == null)
+                RagdollGrabbableObject[] array = FindObjectsOfType<RagdollGrabbableObject>();
+                for (int i = 0; i < array.Length; i++)
                 {
-                    component.currentVoiceChatIngameSettings.InitializeComponents();
-                }
-                if (component.currentVoiceChatIngameSettings.voiceAudio != null)
-                {
-                    ((Component)component.currentVoiceChatIngameSettings.voiceAudio).GetComponent<OccludeAudio>().overridingLowPass = false;
-                }
-            }
-            PlayerControllerB localPlayerController = GameNetworkManager.Instance.localPlayerController;
-            if (localPlayerController == component)
-            {
-                localPlayerController.bleedingHeavily = false;
-                localPlayerController.criticallyInjured = false;
-                if (localPlayerController.playerBodyAnimator != null)
-                {
-                    localPlayerController.playerBodyAnimator.SetBool("Limp", false);
-                }
-                localPlayerController.health = 100;
-                HUDManager.Instance.UpdateHealthUI(100, false);
-                localPlayerController.spectatedPlayerScript = null;
-                ((Behaviour)HUDManager.Instance.audioListenerLowPass).enabled = false;
-                HUDManager.Instance.RemoveSpectateUI();
-                HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
-                PlayerDraggingCamera.gameObject.SetActive(false);
-                StartOfRound.Instance.SetSpectateCameraToGameOverMode(false, localPlayerController);
-            }
-            RagdollGrabbableObject[] array = FindObjectsOfType<RagdollGrabbableObject>();
-            for (int i = 0; i < array.Length; i++)
-            {
-                if (!((GrabbableObject)array[i]).isHeld)
-                {
-                    if (((NetworkBehaviour)this).IsServer && ((NetworkBehaviour)array[i]).NetworkObject.IsSpawned)
+                    if (!((GrabbableObject)array[i]).isHeld)
                     {
-                        ((NetworkBehaviour)array[i]).NetworkObject.Despawn(true);
+                        if (((NetworkBehaviour)this).IsServer && ((NetworkBehaviour)array[i]).NetworkObject.IsSpawned)
+                        {
+                            ((NetworkBehaviour)array[i]).NetworkObject.Despawn(true);
+                        }
+                        else
+                        {
+                            Destroy(((Component)array[i]).gameObject);
+                        }
                     }
-                    else
+                    else if (((GrabbableObject)array[i]).isHeld && ((GrabbableObject)array[i]).playerHeldBy != null)
                     {
-                        Destroy(((Component)array[i]).gameObject);
+                        ((GrabbableObject)array[i]).playerHeldBy.DropAllHeldItems(true, false);
                     }
                 }
-                else if (((GrabbableObject)array[i]).isHeld && ((GrabbableObject)array[i]).playerHeldBy != null)
+                DeadBodyInfo[] array2 = FindObjectsOfType<DeadBodyInfo>();
+                for (int j = 0; j < array2.Length; j++)
                 {
-                    ((GrabbableObject)array[i]).playerHeldBy.DropAllHeldItems(true, false);
+                    Destroy(((Component)array2[j]).gameObject);
                 }
+                /*
+                if (((NetworkBehaviour)this).IsServer)
+                {
+                    StartOfRound instance = StartOfRound.Instance;
+                    instance.livingPlayers++;
+                    StartOfRound.Instance.allPlayersDead = false;
+                }
+                */
+                StartOfRound.Instance.UpdatePlayerVoiceEffects();
             }
-            DeadBodyInfo[] array2 = FindObjectsOfType<DeadBodyInfo>();
-            for (int j = 0; j < array2.Length; j++)
+            catch (Exception ex)
             {
-                Destroy(((Component)array2[j]).gameObject);
+                yandereAI.WriteToConsole(ex.ToString());
             }
-            /*
-            if (((NetworkBehaviour)this).IsServer)
-            {
-                StartOfRound instance = StartOfRound.Instance;
-                instance.livingPlayers++;
-                StartOfRound.Instance.allPlayersDead = false;
-            }
-            */
-            StartOfRound.Instance.UpdatePlayerVoiceEffects();
         }
 
         [ServerRpc(RequireOwnership = false)]

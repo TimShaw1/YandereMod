@@ -27,13 +27,16 @@ public class Plugin : BaseUnityPlugin
 
     static TileSet MyTileSet;
 
-    public Transform yandereRoomToTarget;
+    public static Transform yandereRoomToTarget;
 
-    static GameObject yandereChair;
-    static bool chairSpawned = false;
-    static Transform chairLocation;
+    public static GameObject yandereChair;
+    public static bool chairSpawned = false;
+    public static Transform chairLocation;
 
-    static void WriteToConsole(string output)
+    public static GameObject NetworkClassObj;
+    private static GameObject SpawnedNetworkClassObj;
+
+    public static void WriteToConsole(string output)
     {
         Console.WriteLine("YandereMod: " + output);
     }
@@ -92,6 +95,7 @@ public class Plugin : BaseUnityPlugin
         TerminalKeyword val3 = Assets.MainAssetBundle.LoadAsset<TerminalKeyword>("assets/yandereterminalkeyword.asset");
         MyTileSet = Assets.MainAssetBundle.LoadAsset<TileSet>("assets/yanderetileset.asset");
         yandereChair = Assets.MainAssetBundle.LoadAsset<GameObject>("assets/yanderechair.prefab");
+        NetworkClassObj = Assets.MainAssetBundle.LoadAsset<GameObject>("assets/yanderenetworkmanager.prefab");
         LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(val.enemyPrefab);
         Enemies.RegisterEnemy(val, 22, (Levels.LevelTypes)(-1), (Enemies.SpawnType)0, val2, val3);
         Log.LogInfo($"Applying patches...");
@@ -104,34 +108,10 @@ public class Plugin : BaseUnityPlugin
     {
         static void Postfix(RoundManager __instance)
         {
+            WriteToConsole("Plotting...");
             if (__instance.IsServer)
             {
-                // Should probably be an RPC
-                var tiles = FindObjectsOfType<Tile>();
-                foreach (var tile in tiles)
-                {
-                    if (tile.gameObject.name.Contains("SmallRoom2"))
-                    {
-                        foreach (Transform child in tile.gameObject.transform)
-                        {
-                            if (child.gameObject.name.Contains("AINode"))
-                            {
-                                Instance.yandereRoomToTarget = child;
-                                if (!chairSpawned)
-                                {
-                                    var chair = Instantiate(yandereChair, tile.gameObject.transform.position + new Vector3(0, 2, 0), tile.gameObject.transform.rotation, tile.gameObject.transform);
-                                    // Move chair "forwards" (from where you would look when sitting) 4 units
-                                    chair.transform.position += chair.transform.forward * -4;
-                                    chairSpawned = true;
-                                    chairLocation = chair.transform;
-                                }
-                                return;
-                            }
-                        }
-                    }
-                }
-                WriteToConsole("No suitable target room found for yandere.");
-                // Consider doing this for each round of enemies?
+                NetworkingClass.Instance.SpawnChairClientRpc();
             }
         }
     }
@@ -141,9 +121,33 @@ public class Plugin : BaseUnityPlugin
     {
         static void Postfix(yandereAI __instance)
         {
-            __instance.roomToTarget = Instance.yandereRoomToTarget;
+            __instance.roomToTarget = yandereRoomToTarget;
             __instance.chairInRoom = chairLocation;
-            WriteToConsole("Set room to target as: " + Instance.yandereRoomToTarget.gameObject.name);
+            WriteToConsole("Set room to target as: " + yandereRoomToTarget.gameObject.name);
+        }
+    }
+
+    [HarmonyPatch(typeof(GameNetworkManager), "Start")]
+    class GameNetworkManagerStartPatch
+    {
+        static void Postfix()
+        {
+            WriteToConsole("ADDED PREFAB");
+            NetworkManager.Singleton.AddNetworkPrefab(NetworkClassObj);
+        }
+    }
+
+    [HarmonyPatch(typeof(StartOfRound), "Start")]
+    class StartOfRoundStartPatch
+    {
+        static void Postfix()
+        {
+            if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
+            {
+                WriteToConsole("Spawning");
+                var networkHandlerHost = Instantiate(NetworkClassObj, Vector3.zero, Quaternion.identity);
+                networkHandlerHost.GetComponent<NetworkObject>().Spawn();
+            }
         }
     }
 

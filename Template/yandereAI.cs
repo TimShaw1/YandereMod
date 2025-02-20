@@ -7,6 +7,8 @@ using GameNetcodeStuff;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Animations.Rigging;
+using UnityEngine.UIElements;
 
 namespace yandereMod
 {
@@ -69,12 +71,6 @@ namespace yandereMod
 
         public bool isInAngerMode;
 
-        public AudioSource creatureAngerVoice;
-
-        public AudioSource crackNeckAudio;
-
-        public AudioClip crackNeckSFX;
-
         public int timesThreatened;
 
         private Vector3 waitAroundEntrancePosition;
@@ -101,6 +97,18 @@ namespace yandereMod
         public Transform chairInRoom;
 
         public GameObject NoAIPrefab;
+
+        public ChainIKConstraint rightHandIK;
+
+        public AudioSource stabSFX;
+
+        public AudioSource runningSFX;
+
+        public AudioClip[] killVoiceLines;
+
+        public AudioClip[] spareVoiceLines;
+
+        public AudioClip[] searchingVoiceLines;
 
         public static void WriteToConsole(string output)
         {
@@ -203,11 +211,12 @@ namespace yandereMod
             }
             if (carryingPlayerBody)
             {
-                DropPlayerBody();
-                DropPlayerBodyServerRpc();
+                //DropPlayerBody();
+                //DropPlayerBodyServerRpc();
             }
             AddToAngerMeter(AIIntervalTime);
             agent.speed = 0f;
+            runningSFX.mute = true;
             creatureAnimator.SetBool("goIdle", true);
         }
 
@@ -264,6 +273,7 @@ namespace yandereMod
 
             angerMeter = angerTime;
             agent.speed = 9f;
+            runningSFX.mute = false;
             creatureAnimator.SetBool("goIdle", false);
             creatureAnimator.SetFloat("speedMultiplier", 3.0f);
             
@@ -347,6 +357,7 @@ namespace yandereMod
                         GameNetworkManager.Instance.localPlayerController.JumpToFearLevel(0.3f);
                     }
                     agent.speed = 0f;
+                    runningSFX.mute = true;
                     creatureAnimator.SetBool("goIdle", true);
                     evadeStealthTimer = 0f;
                 }
@@ -356,6 +367,11 @@ namespace yandereMod
                     LookAtYandereTrigger(playerObj);
                     ResetYandereStealthTimerServerRpc(playerObj);
                 }
+            }
+
+            if (carryingPlayerBody && chairInRoom != null && Vector3.Distance(gameObject.transform.position, chairInRoom.position) < 4f)
+            {
+                DropPlayerBody();
             }
 
             switch (currentBehaviourStateIndex)
@@ -395,12 +411,13 @@ namespace yandereMod
                         if (evadeStealthTimer > num2)
                         {
                             evadeStealthTimer = 0f;
-                            SwitchToBehaviourState(0);
+                            //SwitchToBehaviourState(0);
                         }
                         if (!carryingPlayerBody && evadeModeStareDown && evadeStealthTimer < 1.25f)
                         {
                             AddToAngerMeter(Time.deltaTime * 1.5f);
                             agent.speed = 0f;
+                            runningSFX.mute = true;
                             creatureAnimator.SetBool("goIdle", true);
                         }
                         else
@@ -408,10 +425,10 @@ namespace yandereMod
                             evadeModeStareDown = false;
                             if (stunNormalizedTimer > 0f)
                             {
-                                DropPlayerBody();
-                                AddToAngerMeter(0f);
-                                agent.speed = 0f;
-                                creatureAnimator.SetBool("goIdle", true);
+                                //DropPlayerBody();
+                                //AddToAngerMeter(0f);
+                                //agent.speed = 0f;
+                                //creatureAnimator.SetBool("goIdle", true);
                             }
                             else
                             {
@@ -422,10 +439,11 @@ namespace yandereMod
                                 }
                                 if (carryingPlayerBody)
                                 {
-                                    agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 7.25f, 4f, 9f);
+                                    agent.speed = 9f;
+                                    runningSFX.mute = false;
                                     creatureAnimator.SetBool("goIdle", false);
                                     creatureAnimator.SetFloat("speedMultiplier", 3.0f);
-                                    if (chairInRoom != null && Vector3.Distance(transform.position, chairInRoom.position) < 4f)
+                                    if (chairInRoom != null && Vector3.Distance(gameObject.transform.position, chairInRoom.position) < 4f)
                                     {
                                         DropPlayerBody();
                                     }
@@ -433,7 +451,8 @@ namespace yandereMod
                                 }
                                 else
                                 {
-                                    agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 4.25f, 0f, 5f);
+                                    agent.speed = 5f;
+                                    runningSFX.mute = true;
                                     creatureAnimator.SetBool("goIdle", false);
                                     creatureAnimator.SetFloat("speedMultiplier", 1.0f);
                                     
@@ -465,14 +484,14 @@ namespace yandereMod
                         evadeStealthTimer = 0f;
                         if (carryingPlayerBody)
                         {
-                            DropPlayerBody();
+                            //DropPlayerBody();
                             agent.enabled = true;
                             favoriteSpot = ChooseClosestNodeToPosition(base.transform.position, avoidLineOfSight: true);
                             if (!base.IsOwner)
                             {
                                 agent.enabled = false;
                             }
-                            Debug.Log("Yandere: Dropped player body");
+                            //Debug.Log("Yandere: Dropped player body");
                         }
                     }
                     creatureAnimator.SetBool("goIdle", false);
@@ -481,6 +500,7 @@ namespace yandereMod
                     //creatureAnimator.SetFloat("speedMultiplier", Vector3.ClampMagnitude(base.transform.position - previousPosition, 1f).sqrMagnitude / (Time.deltaTime / 4f));
                     previousPosition = base.transform.position;
                     agent.speed = 5f;
+                    runningSFX.mute = true;
                     break;
                 case 2:
                     {
@@ -488,9 +508,7 @@ namespace yandereMod
                         if (!isInAngerMode)
                         {
                             isInAngerMode = true;
-                            DropPlayerBody();
-                            creatureAngerVoice.Play();
-                            creatureAngerVoice.pitch = UnityEngine.Random.Range(0.9f, 1.3f);
+                            //DropPlayerBody();
                             creatureAnimator.SetBool("anger", value: true);
                             creatureAnimator.SetBool("sneak", value: false);
                             if (GameNetworkManager.Instance.localPlayerController.HasLineOfSightToPosition(base.transform.position, 60f, 15, 2.5f))
@@ -509,12 +527,14 @@ namespace yandereMod
                             //creatureAnimator.SetLayerWeight(2, 1f);
                             creatureAnimator.SetBool("goIdle", true);
                             agent.speed = 0f;
+                            runningSFX.mute = true;
                             angerMeter = 6f;
                         }
                         else
                         {
                             //creatureAnimator.SetLayerWeight(2, 0f);
-                            agent.speed = Mathf.Clamp(agent.speed + Time.deltaTime * 1.2f, 3f, 12f);
+                            agent.speed = 12f;
+                            runningSFX.mute = false;
                             creatureAnimator.SetBool("goIdle", false);
                             creatureAnimator.SetFloat("speedMultiplier", 3.0f);
                             
@@ -531,22 +551,15 @@ namespace yandereMod
                     {
                         WriteToConsole("Case 3");
                         agent.speed = 12f;
+                        runningSFX.mute = false;
                         creatureAnimator.SetBool("goIdle", false);
                         creatureAnimator.SetFloat("speedMultiplier", 3.0f);
-                        if (chairInRoom != null && Vector3.Distance(transform.position, chairInRoom.position) < 3.9f)
+                        if (chairInRoom != null && Vector3.Distance(gameObject.transform.position, chairInRoom.position) < 3.9f)
                         {
                             DropPlayerBody();
                         }
                         break;
                     }
-            }
-            if (isInAngerMode)
-            {
-                creatureAngerVoice.volume = Mathf.Lerp(creatureAngerVoice.volume, 1f, 10f * Time.deltaTime);
-            }
-            else
-            {
-                creatureAngerVoice.volume = Mathf.Lerp(creatureAngerVoice.volume, 0f, 2f * Time.deltaTime);
             }
             /*
             Vector3 localEulerAngles = animationContainer.localEulerAngles;
@@ -597,26 +610,59 @@ namespace yandereMod
 
                 if (chairInRoom != null)
                 {
+                    foreach (Transform t in chairInRoom.transform.parent)
+                    {
+                        if (t.name.Contains("Spot Light") && !t.name.Contains("(1)"))
+                        {
+                            t.GetComponent<Light>().color = new Color(0.5f, 0, 0);
+                        }
+                        else if (t.name.Contains("Spot Light (1)"))
+                        {
+                            t.GetComponent<Light>().color = new Color(0.5f, 0.5f, 0.5f);
+                        }
+                    }
                     GetComponent<BoxCollider>().enabled = false;
                     chairInRoom.gameObject.GetComponent<BoxCollider>().enabled = false;
                     if (Vector3.Distance(transform.position, chairInRoom.position) < 5f)
                     {
-                        var spawnedNoAI = Instantiate(NoAIPrefab, chairInRoom.transform.position + chairInRoom.forward * -5f - new Vector3(0, 2f, 0), Quaternion.identity);
+                        var spawnedNoAI = Instantiate(NoAIPrefab, chairInRoom.transform.position + chairInRoom.forward * -3.3f - new Vector3(0, 2f, 0), Quaternion.identity);
+                        Transform tiedCamera = null;
+                        Transform scavenger = null;
                         foreach (Transform t in chairInRoom)
                         {
-                            if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera"))
+                            if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera") || t.name.Contains("DoorCollider"))
                             {
-                                t.gameObject.SetActive(true);
                                 if (t.name.Contains("TiedCamera"))
                                 {
+                                    if (StartOfRound.Instance.localPlayerController.actualClientId == bodyBeingCarriedCopy.playerScript.actualClientId)
+                                        t.gameObject.SetActive(true);
+                                    tiedCamera = t;
                                     spawnedNoAI.transform.LookAt(t);
                                     spawnedNoAI.transform.localEulerAngles = new Vector3(0, spawnedNoAI.transform.localEulerAngles.y, 0);
                                 }
+                                else
+                                {
+                                    t.gameObject.SetActive(true);
+                                }
+
+                                if (t.name.Contains("Scavenger"))
+                                {
+                                    scavenger = t;
+                                }
                             }
-                            PlayerDraggingCamera.gameObject.SetActive(false);
                         }
 
-                        gameObject.SetActive(false);
+                        if (tiedCamera != null)
+                            scavenger.GetComponent<TiedPlayerManager>().tiedCamera = tiedCamera.GetComponent<Camera>();
+
+                        scavenger.GetComponent<TiedPlayerManager>().tiedPlayer = bodyBeingCarriedCopy;
+                        PlayerDraggingCamera.gameObject.SetActive(false);
+
+                        bodyBeingCarriedCopy.gameObject.SetActive(false);
+                        //gameObject.SetActive(false);
+                        transform.position = new Vector3(0, -1000, 0);
+                        agent.enabled = false;
+                        GetComponent<yandereAI>().enabled = false;
 
 
                     }
@@ -812,68 +858,86 @@ namespace yandereMod
 
         }
 
+        private bool CheckForPath(Vector3 position)
+        {
+            return true;
+        }
+
         private void YandereKillPlayer(PlayerControllerB p, Vector3 bodyVelocity, bool spawnBody = true, CauseOfDeath causeOfDeath = CauseOfDeath.Unknown, int deathAnimation = 0, Vector3 positionOffset = default(Vector3))
         {
             if (!p.isPlayerDead && p.AllowPlayerDeath())
             {
-                p.isPlayerDead = true;
-                p.isPlayerControlled = false;
-                p.thisPlayerModelArms.enabled = false;
-                p.localVisor.position = p.playersManager.notSpawnedPosition.position;
-                p.DisablePlayerModel(p.NetworkObject.gameObject);
-                p.GetComponent<Collider>().enabled = false;
-                p.isInsideFactory = false;
-                p.IsInspectingItem = false;
-                p.inTerminalMenu = false;
-                p.twoHanded = false;
-                p.carryWeight = 1f;
-                p.fallValue = 0f;
-                p.fallValueUncapped = 0f;
-                p.takingFallDamage = false;
-                p.isSinking = false;
-                p.isUnderwater = false;
-                StartOfRound.Instance.drowningTimer = 1f;
-                HUDManager.Instance.setUnderwaterFilter = false;
-                //p.wasUnderwaterLastFrame = false;
-                p.sourcesCausingSinking = 0;
-                p.sinkingValue = 0f;
-                p.hinderedMultiplier = 1f;
-                p.isMovementHindered = 0;
-                p.inAnimationWithEnemy = null;
-                //p.positionOfDeath = base.transform.position;
-                if (spawnBody)
+                if (chairInRoom != null && CheckForPath(chairInRoom.position))
                 {
-                    Debug.DrawRay(base.transform.position, base.transform.up * 3f, Color.red, 10f);
-                    p.SpawnDeadBody((int)p.playerClientId, bodyVelocity, (int)causeOfDeath, p, deathAnimation, null, positionOffset);
+
+                    p.isPlayerDead = true;
+                    p.isPlayerControlled = false;
+                    p.thisPlayerModelArms.enabled = false;
+                    p.localVisor.position = p.playersManager.notSpawnedPosition.position;
+                    p.DisablePlayerModel(p.NetworkObject.gameObject);
+                    p.GetComponent<Collider>().enabled = false;
+                    p.isInsideFactory = false;
+                    p.IsInspectingItem = false;
+                    p.inTerminalMenu = false;
+                    p.twoHanded = false;
+                    p.carryWeight = 1f;
+                    p.fallValue = 0f;
+                    p.fallValueUncapped = 0f;
+                    p.takingFallDamage = false;
+                    p.isSinking = false;
+                    p.isUnderwater = false;
+                    StartOfRound.Instance.drowningTimer = 1f;
+                    HUDManager.Instance.setUnderwaterFilter = false;
+                    //p.wasUnderwaterLastFrame = false;
+                    p.sourcesCausingSinking = 0;
+                    p.sinkingValue = 0f;
+                    p.hinderedMultiplier = 1f;
+                    p.isMovementHindered = 0;
+                    p.inAnimationWithEnemy = null;
+                    //p.positionOfDeath = base.transform.position;
+                    if (spawnBody)
+                    {
+                        Debug.DrawRay(base.transform.position, base.transform.up * 3f, Color.red, 10f);
+                        p.SpawnDeadBody((int)p.playerClientId, bodyVelocity, (int)causeOfDeath, p, deathAnimation, null, positionOffset);
+                    }
+
+                    p.SetInSpecialMenu(setInMenu: false);
+                    p.physicsParent = null;
+                    p.overridePhysicsParent = null;
+                    p.lastSyncedPhysicsParent = null;
+                    StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
+                    p.transform.SetParent(p.playersManager.playersContainer);
+                    p.CancelSpecialTriggerAnimations();
+                    //p.ChangeAudioListenerToObject(p.playersManager.spectateCamera.gameObject);
+                    //SoundManager.Instance.SetDiageticMixerSnapshot();
+                    //HUDManager.Instance.SetNearDepthOfFieldEnabled(enabled: true);
+                    HUDManager.Instance.HUDAnimator.SetBool("biohazardDamage", value: false);
+                    Debug.Log("Running yanderekill player function for LOCAL client, player object: " + base.gameObject.name);
+                    //HUDManager.Instance.gameOverAnimator.SetTrigger("gameOver");
+                    //HUDManager.Instance.HideHUD(hide: true);
+                    //p.StopHoldInteractionOnTrigger();
+                    KillPlayerServerRpc((int)p.playerClientId, spawnBody, bodyVelocity, (int)causeOfDeath, deathAnimation, positionOffset);
+                    if (StartOfRound.Instance.localPlayerController.actualClientId == p.actualClientId)
+                        PlayerDraggingCamera.gameObject.SetActive(true);
+                    //StartOfRound.Instance.SwitchCamera(PlayerDraggingCamera);
+                    rightHandIK.weight = 0;
+                    //p.isInGameOverAnimation = 1.5f;
+                    //p.cursorTip.text = "";
+                    //((Behaviour)(object)p.cursorIcon).enabled = false;
+                    p.DropAllHeldItems(spawnBody);
+                    p.DisableJetpackControlsLocally();
+
+                    if (NetworkManager.IsServer)
+                    {
+                        SwitchToBehaviourState(3);
+                        if (chairInRoom != null)
+                            SetDestinationToPosition(chairInRoom.position);
+                    }
                 }
-
-                p.SetInSpecialMenu(setInMenu: false);
-                p.physicsParent = null;
-                p.overridePhysicsParent = null;
-                p.lastSyncedPhysicsParent = null;
-                StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
-                p.transform.SetParent(p.playersManager.playersContainer);
-                p.CancelSpecialTriggerAnimations();
-                //p.ChangeAudioListenerToObject(p.playersManager.spectateCamera.gameObject);
-                //SoundManager.Instance.SetDiageticMixerSnapshot();
-                //HUDManager.Instance.SetNearDepthOfFieldEnabled(enabled: true);
-                HUDManager.Instance.HUDAnimator.SetBool("biohazardDamage", value: false);
-                Debug.Log("Running yanderekill player function for LOCAL client, player object: " + base.gameObject.name);
-                //HUDManager.Instance.gameOverAnimator.SetTrigger("gameOver");
-                //HUDManager.Instance.HideHUD(hide: true);
-                //p.StopHoldInteractionOnTrigger();
-                //p.KillPlayerServerRpc((int)p.playerClientId, spawnBody, bodyVelocity, (int)causeOfDeath, deathAnimation, positionOffset);
-                PlayerDraggingCamera.gameObject.SetActive(true);
-                StartOfRound.Instance.SwitchCamera(PlayerDraggingCamera);
-                //p.isInGameOverAnimation = 1.5f;
-                //p.cursorTip.text = "";
-                //((Behaviour)(object)p.cursorIcon).enabled = false;
-                p.DropAllHeldItems(spawnBody);
-                p.DisableJetpackControlsLocally();
-
-                SwitchToBehaviourState(3);
-                if (chairInRoom != null)
-                    SetDestinationToPosition(chairInRoom.position);
+                else
+                {
+                    p.KillPlayer(bodyVelocity, spawnBody, causeOfDeath, deathAnimation, positionOffset);
+                }
             }
         }
 
@@ -895,8 +959,33 @@ namespace yandereMod
 
         private IEnumerator killAnimation()
         {
-            WalkieTalkie.TransmitOneShotAudio(crackNeckAudio, crackNeckSFX);
-            crackNeckAudio.PlayOneShot(crackNeckSFX);
+            Quaternion startRotation = inSpecialAnimationWithPlayer.transform.rotation;
+            Quaternion targetRotation = Quaternion.LookRotation(eye.position - inSpecialAnimationWithPlayer.transform.position);
+            Vector3 euler = targetRotation.eulerAngles;
+            euler.x = 0; // Lock X-axis
+            euler.z = 0; // Lock Z-axis
+            targetRotation = Quaternion.Euler(euler);
+            float elapsedTime = 0f;
+            if (chairInRoom == null || (chairInRoom != null && !CheckForPath(chairInRoom.position)))
+            {
+                creatureAnimator.SetTrigger("Stab");
+                stabSFX.PlayOneShot(stabSFX.clip);
+            }
+
+            while (elapsedTime < 0.5f)
+            {
+                if (chairInRoom != null && CheckForPath(chairInRoom.position))
+                    rightHandIK.weight = Mathf.Lerp(0, 1, elapsedTime / 0.5f);
+                inSpecialAnimationWithPlayer.transform.rotation = Quaternion.Slerp(startRotation, targetRotation, elapsedTime / 0.5f);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            // Ensure final rotation is exactly the target rotation
+            inSpecialAnimationWithPlayer.transform.rotation = targetRotation;
+
+            //WalkieTalkie.TransmitOneShotAudio(crackNeckAudio, crackNeckSFX);
+            //crackNeckAudio.PlayOneShot(crackNeckSFX);
             Vector3 endPosition = playerRay.GetPoint(1f);
             if (endPosition.y < -80f)
             {
@@ -937,6 +1026,7 @@ namespace yandereMod
             {
                 StopCoroutine(killAnimationCoroutine);
             }
+            rightHandIK.weight = 0;
             inSpecialAnimation = false;
             inKillAnimation = false;
             startingKillAnimationLocalClient = false;
@@ -1030,7 +1120,6 @@ namespace yandereMod
                 creatureVoice.Stop();
             }
             creatureSFX.Stop();
-            creatureAngerVoice.Stop();
             //creatureAnimator.SetLayerWeight(2, 0f);
             base.KillEnemy();
             if (carryingPlayerBody)
