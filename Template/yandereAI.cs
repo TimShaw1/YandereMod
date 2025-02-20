@@ -130,6 +130,11 @@ namespace yandereMod
                 base.DoAIInterval();
                 return;
             }
+            if (currentBehaviourStateIndex == 3)
+            {
+                base.DoAIInterval();
+                return;
+            }
             if (TargetClosestPlayer())
             {
                 if (currentBehaviourStateIndex == 2)
@@ -254,8 +259,8 @@ namespace yandereMod
                     timesThreatened++;
                 }
                 angerMeter += (float)timesThreatened / 1.75f;
-                SwitchToBehaviourStateOnLocalClient(2);
-                EnterAngerModeServerRpc(angerMeter);
+                //SwitchToBehaviourStateOnLocalClient(2);
+                //EnterAngerModeServerRpc(angerMeter);
             }
         }
 
@@ -277,7 +282,7 @@ namespace yandereMod
             creatureAnimator.SetBool("goIdle", false);
             creatureAnimator.SetFloat("speedMultiplier", 3.0f);
             
-            SwitchToBehaviourStateOnLocalClient(2);
+            //SwitchToBehaviourStateOnLocalClient(2);
             waitAroundEntrancePosition = RoundManager.Instance.GetRandomNavMeshPositionInRadius(mainEntrancePosition, 6f);
 
             
@@ -367,6 +372,11 @@ namespace yandereMod
                     LookAtYandereTrigger(playerObj);
                     ResetYandereStealthTimerServerRpc(playerObj);
                 }
+            }
+
+            if (carryingPlayerBody && currentBehaviourStateIndex != 3)
+            {
+                SwitchToBehaviourState(3);
             }
 
             if (carryingPlayerBody && chairInRoom != null && Vector3.Distance(gameObject.transform.position, chairInRoom.position) < 4f)
@@ -549,11 +559,12 @@ namespace yandereMod
 
                 case 3:
                     {
-                        WriteToConsole("Case 3");
                         agent.speed = 12f;
                         runningSFX.mute = false;
                         creatureAnimator.SetBool("goIdle", false);
                         creatureAnimator.SetFloat("speedMultiplier", 3.0f);
+                        if (agent.destination != chairInRoom.position)
+                            SetDestinationToPosition(chairInRoom.position);
                         if (chairInRoom != null && Vector3.Distance(gameObject.transform.position, chairInRoom.position) < 3.9f)
                         {
                             DropPlayerBody();
@@ -941,7 +952,7 @@ namespace yandereMod
             }
         }
 
-        [ServerRpc]
+        [ServerRpc(RequireOwnership = false)]
         private void KillPlayerServerRpc(int playerId, bool spawnBody, Vector3 bodyVelocity, int causeOfDeath, int deathAnimation = 0, Vector3 positionOffset = default(Vector3), Vector3 position = default(Vector3))
         {
             GameObject obj = UnityEngine.Object.Instantiate(StartOfRound.Instance.ragdollGrabbableObjectPrefab, position, Quaternion.identity);
@@ -1064,7 +1075,7 @@ namespace yandereMod
                 agent.enabled = true;
                 isClientCalculatingAI = true;
             }
-            SwitchToBehaviourStateOnLocalClient(1);
+            //SwitchToBehaviourStateOnLocalClient(1);
             if (base.IsServer)
             {
                 SwitchToBehaviourState(1);
