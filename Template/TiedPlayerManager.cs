@@ -17,7 +17,7 @@ public class TiedPlayerManager : MonoBehaviour
 
     private void Start()
     {
-        //StartCoroutine(WaitThenKill());
+        StartCoroutine(WaitThenKill());
     }
 
     private System.Collections.IEnumerator WaitThenKill()
@@ -38,12 +38,16 @@ public class TiedPlayerManager : MonoBehaviour
         if (tiedPlayer != null)
         {
             tiedPlayer.playerScript.deadBody.gameObject.SetActive(true);
-            yandereAI.WriteToConsole("" + ReviveManager.Instance);
             ReviveManager.Instance.ReviveSinglePlayer(tiedPlayer.transform.position, tiedPlayer.playerScript);
             heartbeat.mute = true;
-            //StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.spectateCamera);
-            //tiedPlayer.playerScript.KillPlayer(Vector3.zero, false, CauseOfDeath.Stabbing);
-            //StartOfRound.Instance.SwitchCamera(StartOfRound.Instance.spectateCamera);
+            float elapsedTime2 = 0f;
+
+            while (elapsedTime2 < 0.6f)
+            {
+                elapsedTime2 += Time.deltaTime;
+                yield return null;
+            }
+            tiedPlayer.playerScript.KillPlayer(Vector3.zero, false, CauseOfDeath.Stabbing);
         }
     }
 }

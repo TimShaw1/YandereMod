@@ -41,10 +41,11 @@ namespace yandereMod
         public void ReviveSinglePlayer(Vector3 position, PlayerControllerB p)
         {
             NetworkBehaviourReference netRef = new NetworkBehaviourReference(p);
-            RevivePlayer(position, netRef);
+            RevivePlayerServerRpc(position, netRef);
         }
 
-        private void RevivePlayer(Vector3 position, NetworkBehaviourReference netRef)
+        [ServerRpc(RequireOwnership = false)]
+        private void RevivePlayerServerRpc(Vector3 position, NetworkBehaviourReference netRef)
         {
             //IL_0002: Unknown result type (might be due to invalid IL or missing references)
             //IL_0003: Unknown result type (might be due to invalid IL or missing references)
@@ -168,6 +169,7 @@ namespace yandereMod
                     PlayerDraggingCamera.gameObject.SetActive(false);
                     StartOfRound.Instance.SetSpectateCameraToGameOverMode(false, localPlayerController);
                 }
+
                 RagdollGrabbableObject[] array = FindObjectsOfType<RagdollGrabbableObject>();
                 for (int i = 0; i < array.Length; i++)
                 {
@@ -187,11 +189,15 @@ namespace yandereMod
                         ((GrabbableObject)array[i]).playerHeldBy.DropAllHeldItems(true, false);
                     }
                 }
+
+
                 DeadBodyInfo[] array2 = FindObjectsOfType<DeadBodyInfo>();
                 for (int j = 0; j < array2.Length; j++)
                 {
                     Destroy(((Component)array2[j]).gameObject);
                 }
+
+
                 /*
                 if (((NetworkBehaviour)this).IsServer)
                 {
