@@ -26,7 +26,7 @@ public class FirstPersonCameraRotation : MonoBehaviour
     const string yAxis = "Mouse Y";
     PlayerActions playerActions;
 
-    YandereEyeTarget yandere;
+    public YandereEyeTarget yandere;
     Quaternion initRot;
 
     void Start()
@@ -35,6 +35,7 @@ public class FirstPersonCameraRotation : MonoBehaviour
         playerActions.Movement.Enable();
         yandere = FindFirstObjectByType<YandereEyeTarget>();
         transform.LookAt(yandere.eye.transform.position);
+        yandereAI.WriteToConsole("" + yandere.eye.transform.position);
     }
 
     // Member variables (place these at the class level)
@@ -51,6 +52,12 @@ public class FirstPersonCameraRotation : MonoBehaviour
 
     void Update()
     {
+        if (yandere.eye.transform.position.y < -800)
+        {
+            yandere = FindFirstObjectByType<YandereEyeTarget>();
+            transform.LookAt(yandere.eye.transform.position);
+        }
+
         // 1. Get player's mouse input and update the offset.
         //    (Assume offset.x is yaw and offset.y is pitch)
         Vector2 lookInput = playerActions.Movement.Look.ReadValue<Vector2>() *

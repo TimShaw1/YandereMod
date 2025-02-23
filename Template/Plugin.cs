@@ -25,8 +25,6 @@ public class Plugin : BaseUnityPlugin
 
     public static string assembly_path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-    static TileSet MyTileSet;
-
     public static Transform yandereRoomToTarget;
 
     public static GameObject yandereChair;
@@ -35,6 +33,7 @@ public class Plugin : BaseUnityPlugin
 
     public static GameObject NetworkClassObj;
     private static GameObject SpawnedNetworkClassObj;
+    private static GameObject NoAIPrefab;
 
     public static void WriteToConsole(string output)
     {
@@ -93,9 +92,9 @@ public class Plugin : BaseUnityPlugin
         EnemyType val = Assets.MainAssetBundle.LoadAsset<EnemyType>("assets/yandereenemy.asset");
         TerminalNode val2 = Assets.MainAssetBundle.LoadAsset<TerminalNode>("assets/yandereterminalnode.asset");
         TerminalKeyword val3 = Assets.MainAssetBundle.LoadAsset<TerminalKeyword>("assets/yandereterminalkeyword.asset");
-        MyTileSet = Assets.MainAssetBundle.LoadAsset<TileSet>("assets/yanderetileset.asset");
         yandereChair = Assets.MainAssetBundle.LoadAsset<GameObject>("assets/yanderechair.prefab");
         NetworkClassObj = Assets.MainAssetBundle.LoadAsset<GameObject>("assets/yanderenetworkmanager.prefab");
+        NoAIPrefab = Assets.MainAssetBundle.LoadAsset<GameObject>("assets/yandererigupdatednoai.prefab");
         LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(val.enemyPrefab);
         Enemies.RegisterEnemy(val, 22, (Levels.LevelTypes)(-1), (Enemies.SpawnType)0, val2, val3);
         Log.LogInfo($"Applying patches...");
@@ -134,6 +133,7 @@ public class Plugin : BaseUnityPlugin
         {
             WriteToConsole("ADDED PREFAB");
             NetworkManager.Singleton.AddNetworkPrefab(NetworkClassObj);
+            NetworkManager.Singleton.AddNetworkPrefab(NoAIPrefab);
         }
     }
 

@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEngine;
 using yandereMod;
 using DunGen;
+using GameNetcodeStuff;
 
 namespace yandereMod;
 
@@ -54,5 +55,48 @@ public class NetworkingClass : NetworkBehaviour
         }
         Plugin.WriteToConsole("No suitable target room found for yandere.");
         // Consider doing this for each round of enemies?
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void SetUpYandereRoomServerRpc(ulong clientId, NetworkBehaviourReference deadBodyRef, NetworkBehaviourReference yandereRef)
+    {
+        SetUpYandereRoomClientRpc(clientId, deadBodyRef, yandereRef);
+    }
+
+    [ClientRpc]
+    public void SetUpYandereRoomClientRpc(ulong clientId, NetworkBehaviourReference deadBodyRef, NetworkBehaviourReference yandereRef)
+    {
+        PlayerControllerB component;
+        deadBodyRef.TryGet(out component);
+        yandereAI component2;
+        yandereRef.TryGet(out component2);
+        if (clientId != NetworkManager.Singleton.LocalClientId)
+        {
+            foreach (Transform t in Plugin.chairLocation.transform.parent)
+            {
+                if (t.name.Contains("Spot Light") && !t.name.Contains("(1)"))
+                {
+                    t.GetComponent<Light>().color = new Color(0.5f, 0, 0);
+                }
+                else if (t.name.Contains("Spot Light (1)"))
+                {
+                    t.GetComponent<Light>().color = new Color(0.5f, 0.5f, 0.5f);
+                }
+            }
+
+            foreach (Transform t in Plugin.chairLocation)
+            {
+                if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("DoorCollider"))
+                {
+                    t.gameObject.SetActive(true);
+                }
+            }
+        }
+
+        component.deadBody.gameObject.SetActive(false);
+        component2.GetComponent<yandereAI>().enabled = false;
+        component2.transform.position = new Vector3(0, -1000, 0);
+        component2.agent.enabled = false;
+        component2.runningSFX.mute = true;
     }
 }

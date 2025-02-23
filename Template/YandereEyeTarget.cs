@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace yandereMod;
 
-class YandereEyeTarget : MonoBehaviour
+public class YandereEyeTarget : NetworkBehaviour
 {
     public Transform eye;
 }

@@ -110,6 +110,12 @@ namespace yandereMod
 
         public AudioClip[] searchingVoiceLines;
 
+        private NetworkVariable<bool> hasPathToChair = new NetworkVariable<bool>(false);
+
+        private NetworkVariable<bool> setPathToChair = new NetworkVariable<bool>(false);
+
+        private GameObject spawnedNoAIGlobal = null;
+
         public static void WriteToConsole(string output)
         {
             Console.WriteLine("YandereAI: " + output);
@@ -494,6 +500,7 @@ namespace yandereMod
                         evadeStealthTimer = 0f;
                         if (carryingPlayerBody)
                         {
+                            /*
                             //DropPlayerBody();
                             agent.enabled = true;
                             favoriteSpot = ChooseClosestNodeToPosition(base.transform.position, avoidLineOfSight: true);
@@ -502,6 +509,7 @@ namespace yandereMod
                                 agent.enabled = false;
                             }
                             //Debug.Log("Yandere: Dropped player body");
+                            */
                         }
                     }
                     creatureAnimator.SetBool("goIdle", false);
@@ -606,6 +614,33 @@ namespace yandereMod
             
         }
 
+        [ServerRpc(RequireOwnership = false)]
+        private void SpawnYandereNoAIServerRpc()
+        {
+            if (spawnedNoAIGlobal == null)
+            {
+                spawnedNoAIGlobal = Instantiate(NoAIPrefab, chairInRoom.transform.position + chairInRoom.forward * -3.3f - new Vector3(0, 2f, 0), Quaternion.identity);
+                spawnedNoAIGlobal.GetComponent<NetworkObject>().Spawn();
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void LookYandereNoAIServerRpc()
+        {
+            spawnedNoAIGlobal.transform.LookAt(chairInRoom);
+            spawnedNoAIGlobal.transform.localEulerAngles = new Vector3(0, spawnedNoAIGlobal.transform.localEulerAngles.y, 0);
+            LookYandereNoAIClientRpc(new NetworkBehaviourReference(spawnedNoAIGlobal.GetComponent<YandereEyeTarget>()));
+        }
+
+        [ClientRpc]
+        private void LookYandereNoAIClientRpc(NetworkBehaviourReference netref)
+        {
+            YandereEyeTarget component2;
+            netref.TryGet(out component2);
+            component2.gameObject.transform.LookAt(chairInRoom);
+            component2.gameObject.transform.localEulerAngles = new Vector3(0, component2.gameObject.transform.localEulerAngles.y, 0);
+        }
+
         private void DropPlayerBody()
         {
             if (carryingPlayerBody)
@@ -619,75 +654,75 @@ namespace yandereMod
                 bodyBeingCarried = null;
                 creatureAnimator.SetBool("carryingBody", value: false);
 
-                if (chairInRoom != null)
+                if (bodyBeingCarriedCopy.playerScript.actualClientId == NetworkManager.Singleton.LocalClientId)
                 {
-                    foreach (Transform t in chairInRoom.transform.parent)
-                    {
-                        if (t.name.Contains("Spot Light") && !t.name.Contains("(1)"))
-                        {
-                            t.GetComponent<Light>().color = new Color(0.5f, 0, 0);
-                        }
-                        else if (t.name.Contains("Spot Light (1)"))
-                        {
-                            t.GetComponent<Light>().color = new Color(0.5f, 0.5f, 0.5f);
-                        }
-                    }
-                    GetComponent<BoxCollider>().enabled = false;
-                    chairInRoom.gameObject.GetComponent<BoxCollider>().enabled = false;
-                    if (Vector3.Distance(transform.position, chairInRoom.position) < 5f)
-                    {
-                        var spawnedNoAI = Instantiate(NoAIPrefab, chairInRoom.transform.position + chairInRoom.forward * -3.3f - new Vector3(0, 2f, 0), Quaternion.identity);
-                        Transform tiedCamera = null;
-                        Transform scavenger = null;
-                        foreach (Transform t in chairInRoom)
-                        {
-                            if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera") || t.name.Contains("DoorCollider"))
-                            {
-                                if (t.name.Contains("TiedCamera"))
-                                {
-                                    if (StartOfRound.Instance.localPlayerController.actualClientId == bodyBeingCarriedCopy.playerScript.actualClientId)
-                                        t.gameObject.SetActive(true);
-                                    tiedCamera = t;
-                                    spawnedNoAI.transform.LookAt(t);
-                                    spawnedNoAI.transform.localEulerAngles = new Vector3(0, spawnedNoAI.transform.localEulerAngles.y, 0);
-                                }
-                                else
-                                {
-                                    t.gameObject.SetActive(true);
-                                }
 
-                                if (t.name.Contains("Scavenger"))
-                                {
-                                    scavenger = t;
-                                }
+                    if (chairInRoom != null)
+                    {
+                        foreach (Transform t in chairInRoom.transform.parent)
+                        {
+                            if (t.name.Contains("Spot Light") && !t.name.Contains("(1)"))
+                            {
+                                t.GetComponent<Light>().color = new Color(0.5f, 0, 0);
+                            }
+                            else if (t.name.Contains("Spot Light (1)"))
+                            {
+                                t.GetComponent<Light>().color = new Color(0.5f, 0.5f, 0.5f);
                             }
                         }
+                        GetComponent<BoxCollider>().enabled = false;
+                        chairInRoom.gameObject.GetComponent<BoxCollider>().enabled = false;
+                        if (Vector3.Distance(transform.position, chairInRoom.position) < 5f)
+                        {
+                            SpawnYandereNoAIServerRpc();
+                            this.GetComponent<YandereEyeTarget>().enabled = false;
+                            Transform tiedCamera = null;
+                            Transform scavenger = null;
+                            foreach (Transform t in chairInRoom)
+                            {
+                                if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera") || t.name.Contains("DoorCollider"))
+                                {
+                                    if (t.name.Contains("TiedCamera"))
+                                    {
+                                        if (StartOfRound.Instance.localPlayerController.actualClientId == bodyBeingCarriedCopy.playerScript.actualClientId)
+                                            t.gameObject.SetActive(true);
+                                        tiedCamera = t;
+                                        LookYandereNoAIServerRpc();
+                                    }
+                                    else
+                                    {
+                                        t.gameObject.SetActive(true);
+                                    }
 
-                        if (tiedCamera != null)
-                            scavenger.GetComponent<TiedPlayerManager>().tiedCamera = tiedCamera.GetComponent<Camera>();
+                                    if (t.name.Contains("Scavenger"))
+                                    {
+                                        scavenger = t;
+                                    }
+                                }
+                            }
 
-                        scavenger.GetComponent<TiedPlayerManager>().tiedPlayer = bodyBeingCarriedCopy;
-                        PlayerDraggingCamera.gameObject.SetActive(false);
+                            if (tiedCamera != null)
+                                scavenger.GetComponent<TiedPlayerManager>().tiedCamera = tiedCamera.GetComponent<Camera>();
 
-                        bodyBeingCarriedCopy.gameObject.SetActive(false);
-                        //gameObject.SetActive(false);
-                        transform.position = new Vector3(0, -1000, 0);
-                        agent.enabled = false;
-                        GetComponent<yandereAI>().enabled = false;
+                            scavenger.GetComponent<TiedPlayerManager>().tiedPlayer = bodyBeingCarriedCopy;
+                            scavenger.GetComponent<TiedPlayerManager>().heartbeat.mute = false;
+                            PlayerDraggingCamera.gameObject.SetActive(false);
+                            //gameObject.SetActive(false);
+                            NetworkingClass.Instance.SetUpYandereRoomServerRpc(NetworkManager.Singleton.LocalClientId, new NetworkBehaviourReference(bodyBeingCarriedCopy.playerScript), new NetworkBehaviourReference(this));
 
+                            GetComponent<BoxCollider>().enabled = true;
 
+                        }
+                        else
+                        {
+                            ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
+                        }
                     }
                     else
                     {
                         ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
+                        PlayerDraggingCamera.gameObject.SetActive(false);
                     }
-
-                    GetComponent<BoxCollider>().enabled = true;
-                }
-                else
-                {
-                    ReviveManager.Instance.ReviveSinglePlayer(bodyBeingCarriedCopy.transform.position, bodyBeingCarriedCopy.playerScript);
-                    PlayerDraggingCamera.gameObject.SetActive(false);
                 }
             }
         }
@@ -785,10 +820,19 @@ namespace yandereMod
             {
                 PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions2(other, inKillAnimation || startingKillAnimationLocalClient || carryingPlayerBody, true);
                 WriteToConsole("" + playerControllerB);
-                if (playerControllerB != null)
+                if (IsServer)
                 {
-                    KillPlayerAnimationServerRpc((int)playerControllerB.playerClientId);
-                    startingKillAnimationLocalClient = true;
+                    agent.enabled = true;
+                    var path = new NavMeshPath();
+                    agent.CalculatePath(RoundManager.Instance.GetNavMeshPosition(chairInRoom.position, default(NavMeshHit), 10f), path);
+                    hasPathToChair.Value = path.status == NavMeshPathStatus.PathComplete;
+                    setPathToChair.Value = true;
+                    WriteToConsole("0 complete 1 partial 2 invalid: " + path.status);
+                    if (playerControllerB != null)
+                    {
+                        KillPlayerAnimationServerRpc((int)playerControllerB.playerClientId);
+                        startingKillAnimationLocalClient = true;
+                    }
                 }
             }
         }
@@ -869,9 +913,9 @@ namespace yandereMod
 
         }
 
-        private bool CheckForPath(Vector3 position)
+        private bool CheckForPath(Vector3 position = default)
         {
-            return true;
+            return hasPathToChair.Value && setPathToChair.Value;
         }
 
         private void YandereKillPlayer(PlayerControllerB p, Vector3 bodyVelocity, bool spawnBody = true, CauseOfDeath causeOfDeath = CauseOfDeath.Unknown, int deathAnimation = 0, Vector3 positionOffset = default(Vector3))
@@ -977,6 +1021,11 @@ namespace yandereMod
             euler.z = 0; // Lock Z-axis
             targetRotation = Quaternion.Euler(euler);
             float elapsedTime = 0f;
+
+            while (!setPathToChair.Value)
+                yield return null;
+
+            WriteToConsole("Has path? " + CheckForPath(chairInRoom.position));
             if (chairInRoom == null || (chairInRoom != null && !CheckForPath(chairInRoom.position)))
             {
                 creatureAnimator.SetTrigger("Stab");
