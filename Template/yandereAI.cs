@@ -839,7 +839,6 @@ namespace yandereMod
 
         public override void OnCollideWithPlayer(Collider other)
         {
-            WriteToConsole("Colliding with player");
             base.OnCollideWithPlayer(other);
             PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions(other, inKillAnimation || startingKillAnimationLocalClient || carryingPlayerBody);
             if (playerControllerB != null)
