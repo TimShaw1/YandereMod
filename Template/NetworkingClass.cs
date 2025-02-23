@@ -99,4 +99,34 @@ public class NetworkingClass : NetworkBehaviour
         component2.agent.enabled = false;
         component2.runningSFX.mute = true;
     }
+
+    [ServerRpc]
+    public void disableYandereRoomServerRpc()
+    {
+        disableYandereRoomClientRpc();
+    }
+
+    [ClientRpc]
+    public void disableYandereRoomClientRpc()
+    {
+        foreach (Transform t in Plugin.chairLocation.transform.parent)
+        {
+            if (t.name.Contains("Spot Light") && !t.name.Contains("(1)"))
+            {
+                t.GetComponent<Light>().color = new Color(1f, 1f, 1f);
+            }
+            else if (t.name.Contains("Spot Light (1)"))
+            {
+                t.GetComponent<Light>().color = new Color(1f, 1f, 1f);
+            }
+        }
+        foreach (Transform t in Plugin.chairLocation)
+        {
+            if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera") || t.name.Contains("DoorCollider"))
+            {
+                t.gameObject.SetActive(false);
+
+            }
+        }
+    }
 }

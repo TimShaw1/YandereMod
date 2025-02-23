@@ -5,6 +5,7 @@ using System.Text;
 using Unity.Netcode;
 using static Unity.Netcode.FastBufferWriter;
 using UnityEngine;
+using LethalLib.Modules;
 
 namespace yandereMod
 {
@@ -38,23 +39,23 @@ namespace yandereMod
             return -1;
         }
 
-        public void ReviveSinglePlayer(Vector3 position, PlayerControllerB p)
+        public void ReviveSinglePlayer(Vector3 position, PlayerControllerB p, bool killAfter = false)
         {
             NetworkBehaviourReference netRef = new NetworkBehaviourReference(p);
-            RevivePlayerServerRpc(position, netRef);
+            RevivePlayerServerRpc(position, netRef, killAfter);
         }
 
         [ServerRpc(RequireOwnership = false)]
-        private void RevivePlayerServerRpc(Vector3 position, NetworkBehaviourReference netRef)
+        private void RevivePlayerServerRpc(Vector3 position, NetworkBehaviourReference netRef, bool killAfter = false)
         {
             //IL_0002: Unknown result type (might be due to invalid IL or missing references)
             //IL_0003: Unknown result type (might be due to invalid IL or missing references)
-            RevivePlayerClientRpc(position, netRef);
+            RevivePlayerClientRpc(position, netRef, killAfter);
             SyncLivingPlayersServerRpc();
         }
 
         [ClientRpc]
-        private void RevivePlayerClientRpc(Vector3 spawnPosition, NetworkBehaviourReference netRef)
+        private void RevivePlayerClientRpc(Vector3 spawnPosition, NetworkBehaviourReference netRef, bool killAfter = false)
         {
             try
             {
@@ -123,8 +124,8 @@ namespace yandereMod
                     {
                         HUDManager.Instance.gasHelmetAnimator.SetBool("gasEmitting", false);
                         component.hasBegunSpectating = false;
-                        HUDManager.Instance.RemoveSpectateUI();
-                        HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
+                        //HUDManager.Instance.RemoveSpectateUI();
+                        //HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
                         component.hinderedMultiplier = 1f;
                         component.isMovementHindered = 0;
                         component.sourcesCausingSinking = 0;
@@ -164,10 +165,10 @@ namespace yandereMod
                     HUDManager.Instance.UpdateHealthUI(100, false);
                     localPlayerController.spectatedPlayerScript = null;
                     ((Behaviour)HUDManager.Instance.audioListenerLowPass).enabled = false;
-                    HUDManager.Instance.RemoveSpectateUI();
-                    HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
+                    //HUDManager.Instance.RemoveSpectateUI();
+                    //HUDManager.Instance.gameOverAnimator.SetTrigger("revive");
                     PlayerDraggingCamera.gameObject.SetActive(false);
-                    StartOfRound.Instance.SetSpectateCameraToGameOverMode(false, localPlayerController);
+                    //StartOfRound.Instance.SetSpectateCameraToGameOverMode(false, localPlayerController);
                 }
 
                 RagdollGrabbableObject[] array = FindObjectsOfType<RagdollGrabbableObject>();
@@ -194,7 +195,14 @@ namespace yandereMod
                 DeadBodyInfo[] array2 = FindObjectsOfType<DeadBodyInfo>();
                 for (int j = 0; j < array2.Length; j++)
                 {
-                    Destroy(((Component)array2[j]).gameObject);
+                    try
+                    {
+                        Destroy(((Component)array2[j]).gameObject);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                 }
 
 
@@ -207,6 +215,11 @@ namespace yandereMod
                 }
                 */
                 StartOfRound.Instance.UpdatePlayerVoiceEffects();
+
+                if (killAfter)
+                {
+                    component.KillPlayer(Vector3.zero, false, CauseOfDeath.Stabbing);
+                }
             }
             catch (Exception ex)
             {

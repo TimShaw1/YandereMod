@@ -708,6 +708,8 @@ namespace yandereMod
                             scavenger.GetComponent<TiedPlayerManager>().heartbeat.mute = false;
                             PlayerDraggingCamera.gameObject.SetActive(false);
                             //gameObject.SetActive(false);
+                            SwitchToBehaviourState(1);
+                            runningSFX.mute = true;
                             NetworkingClass.Instance.SetUpYandereRoomServerRpc(NetworkManager.Singleton.LocalClientId, new NetworkBehaviourReference(bodyBeingCarriedCopy.playerScript), new NetworkBehaviourReference(this));
 
                             GetComponent<BoxCollider>().enabled = true;
@@ -960,7 +962,7 @@ namespace yandereMod
                     p.overridePhysicsParent = null;
                     p.lastSyncedPhysicsParent = null;
                     StartOfRound.Instance.CurrentPlayerPhysicsRegions.Clear();
-                    p.transform.SetParent(p.playersManager.playersContainer);
+                    //p.transform.SetParent(p.playersManager.playersContainer);
                     p.CancelSpecialTriggerAnimations();
                     //p.ChangeAudioListenerToObject(p.playersManager.spectateCamera.gameObject);
                     //SoundManager.Instance.SetDiageticMixerSnapshot();
@@ -973,7 +975,7 @@ namespace yandereMod
                     KillPlayerServerRpc((int)p.playerClientId, spawnBody, bodyVelocity, (int)causeOfDeath, deathAnimation, positionOffset);
                     if (StartOfRound.Instance.localPlayerController.actualClientId == p.actualClientId)
                         PlayerDraggingCamera.gameObject.SetActive(true);
-                    //StartOfRound.Instance.SwitchCamera(PlayerDraggingCamera);
+                    StartOfRound.Instance.SwitchCamera(PlayerDraggingCamera);
                     rightHandIK.weight = 0;
                     //p.isInGameOverAnimation = 1.5f;
                     //p.cursorTip.text = "";

@@ -38,16 +38,12 @@ public class TiedPlayerManager : MonoBehaviour
         if (tiedPlayer != null)
         {
             tiedPlayer.playerScript.deadBody.gameObject.SetActive(true);
-            ReviveManager.Instance.ReviveSinglePlayer(tiedPlayer.transform.position, tiedPlayer.playerScript);
+            ReviveManager.Instance.ReviveSinglePlayer(RoundManager.FindMainEntrancePosition(), tiedPlayer.playerScript, true);
             heartbeat.mute = true;
-            float elapsedTime2 = 0f;
-
-            while (elapsedTime2 < 0.6f)
-            {
-                elapsedTime2 += Time.deltaTime;
-                yield return null;
-            }
-            tiedPlayer.playerScript.KillPlayer(Vector3.zero, false, CauseOfDeath.Stabbing);
         }
+
+        NetworkingClass.Instance.disableYandereRoomServerRpc();
     }
+
+    
 }
