@@ -17,7 +17,22 @@ public class TiedPlayerManager : MonoBehaviour
 
     private void Start()
     {
-        StartCoroutine(WaitThenKill());
+        //StartCoroutine(WaitThenKill());
+        StartCoroutine(TestText());
+    }
+
+    private System.Collections.IEnumerator TestText()
+    {
+        yield return new WaitForSeconds(4f);
+        var text = FindFirstObjectByType<textAnimation>();
+        text.gameObject.SetActive(false);
+        text.textMeshPro.text = "not... senpai...";
+        text.gameObject.SetActive(true);
+
+        yield return new WaitForSeconds(3f);
+        text.gameObject.SetActive(false);
+        text.textMeshPro.text = "...";
+        text.gameObject.SetActive(true);
     }
 
     private System.Collections.IEnumerator WaitThenKill()

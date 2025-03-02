@@ -116,6 +116,14 @@ namespace yandereMod
 
         private GameObject spawnedNoAIGlobal = null;
 
+        private float timeTakenToFindChair = 0f;
+
+        public OverrideTransform headPivot;
+
+        private float headPivotTimer = 0f;
+
+        private float laughTimer = 0f;
+
         public static void WriteToConsole(string output)
         {
             Console.WriteLine("YandereAI: " + output);
@@ -123,10 +131,17 @@ namespace yandereMod
 
         public override void Start()
         {
+            var yanderes = FindObjectsByType<yandereAI>(FindObjectsSortMode.None);
+            if (yanderes.Length > 1)
+            {
+                if (IsServer)
+                    this.NetworkObject.Despawn();
+            }
             base.Start();
             movingTowardsTargetPlayer = true;
             localPlayerCamera = GameNetworkManager.Instance.localPlayerController.gameplayCamera.transform;
             mainEntrancePosition = RoundManager.FindMainEntrancePosition();
+            setPathToChair.Value = false;
         }
 
         public override void DoAIInterval()
@@ -320,6 +335,30 @@ namespace yandereMod
             }
         }
 
+        private IEnumerator PivotHead()
+        {
+            float twitchDir = UnityEngine.Random.Range(0,2) == 0 ? -1 : 1;
+            headPivot.data.rotation = new Vector3(0f, 10f * UnityEngine.Random.Range(0.1f, 0.99f), twitchDir * 25f);
+            float elapsedTime = 0f;
+            while (elapsedTime < 0.1f)
+            {
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+            headPivot.data.rotation = new Vector3(0f, 0f, 0f);
+
+            twitchDir = UnityEngine.Random.Range(0, 2) == 0 ? -1 : 1;
+            headPivot.data.rotation = new Vector3(0f, 10f * UnityEngine.Random.Range(0.1f, 0.99f), twitchDir * 25f);
+            elapsedTime = 0f;
+            while (elapsedTime < 0.1f)
+            {
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+            headPivotTimer = 0f;
+            headPivot.data.rotation = new Vector3(0f, 0f, 0f);
+        }
+
         public override void Update()
         {
             base.Update();
@@ -388,6 +427,20 @@ namespace yandereMod
             if (carryingPlayerBody && chairInRoom != null && Vector3.Distance(gameObject.transform.position, chairInRoom.position) < 4f)
             {
                 DropPlayerBody();
+            }
+
+            headPivotTimer += Time.deltaTime;
+            if (headPivotTimer > 4f * UnityEngine.Random.Range(0.3f, 0.99f))
+            {
+                headPivotTimer = 0f;
+                StartCoroutine(PivotHead());
+            }
+
+            laughTimer += Time.deltaTime;
+            if (laughTimer > 25f)
+            {
+                creatureVoice.PlayOneShot(searchingVoiceLines[0]);
+                laughTimer = UnityEngine.Random.Range(-5.99f, 5.99f);
             }
 
             switch (currentBehaviourStateIndex)
@@ -571,11 +624,22 @@ namespace yandereMod
                         runningSFX.mute = false;
                         creatureAnimator.SetBool("goIdle", false);
                         creatureAnimator.SetFloat("speedMultiplier", 3.0f);
-                        if (agent.destination != chairInRoom.position)
+                        timeTakenToFindChair += Time.deltaTime;
+
+                        if (chairInRoom != null && timeTakenToFindChair > 30f)
+                        {
+                            transform.position = chairInRoom.position;
+                        }
+
+                        if (chairInRoom != null && agent.destination != chairInRoom.position)
                             SetDestinationToPosition(chairInRoom.position);
                         if (chairInRoom != null && Vector3.Distance(gameObject.transform.position, chairInRoom.position) < 3.9f)
                         {
                             DropPlayerBody();
+                        }
+                        if (carryingPlayerBody && !CheckForPath())
+                        {
+                            DropPlayerBody2();
                         }
                         break;
                     }
@@ -641,6 +705,20 @@ namespace yandereMod
             component2.gameObject.transform.localEulerAngles = new Vector3(0, component2.gameObject.transform.localEulerAngles.y, 0);
         }
 
+        private void DropPlayerBody2()
+        {
+            if (carryingPlayerBody)
+            {
+                carryingPlayerBody = false;
+                bodyBeingCarried.matchPositionExactly = false;
+                bodyBeingCarried.attachedTo = null;
+                bodyBeingCarried = null;
+                creatureAnimator.SetBool("carryingBody", value: false);
+                SwitchToBehaviourState(0);
+                timeTakenToFindChair = 0;
+            }
+        }
+
         private void DropPlayerBody()
         {
             if (carryingPlayerBody)
@@ -653,6 +731,8 @@ namespace yandereMod
                 WriteToConsole("" + bodyBeingCarriedCopy.playerScript);
                 bodyBeingCarried = null;
                 creatureAnimator.SetBool("carryingBody", value: false);
+
+                timeTakenToFindChair = 0;
 
                 if (bodyBeingCarriedCopy.playerScript.actualClientId == NetworkManager.Singleton.LocalClientId)
                 {
@@ -680,7 +760,7 @@ namespace yandereMod
                             Transform scavenger = null;
                             foreach (Transform t in chairInRoom)
                             {
-                                if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera") || t.name.Contains("DoorCollider"))
+                                if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("TiedCamera") || t.name.Contains("DoorCollider") || t.name.Contains("Canvas"))
                                 {
                                     if (t.name.Contains("TiedCamera"))
                                     {
@@ -824,12 +904,15 @@ namespace yandereMod
                 WriteToConsole("" + playerControllerB);
                 if (IsServer)
                 {
-                    agent.enabled = true;
-                    var path = new NavMeshPath();
-                    agent.CalculatePath(RoundManager.Instance.GetNavMeshPosition(chairInRoom.position, default(NavMeshHit), 10f), path);
-                    hasPathToChair.Value = path.status == NavMeshPathStatus.PathComplete;
-                    setPathToChair.Value = true;
-                    WriteToConsole("0 complete 1 partial 2 invalid: " + path.status);
+                    if (chairInRoom)
+                    {
+                        agent.enabled = true;
+                        var path = new NavMeshPath();
+                        agent.CalculatePath(RoundManager.Instance.GetNavMeshPosition(chairInRoom.position, default(NavMeshHit), 10f), path);
+                        hasPathToChair.Value = path.status == NavMeshPathStatus.PathComplete;
+                        setPathToChair.Value = true;
+                        WriteToConsole("0 complete 1 partial 2 invalid: " + path.status);
+                    }
                     if (playerControllerB != null)
                     {
                         KillPlayerAnimationServerRpc((int)playerControllerB.playerClientId);
@@ -1023,10 +1106,14 @@ namespace yandereMod
             targetRotation = Quaternion.Euler(euler);
             float elapsedTime = 0f;
 
-            while (!setPathToChair.Value)
-                yield return null;
+            if (chairInRoom)
+            {
+                while (!setPathToChair.Value)
+                    yield return null;
 
-            WriteToConsole("Has path? " + CheckForPath(chairInRoom.position));
+
+                WriteToConsole("Has path? " + CheckForPath(chairInRoom.position));
+            }
             if (chairInRoom == null || (chairInRoom != null && !CheckForPath(chairInRoom.position)))
             {
                 creatureAnimator.SetTrigger("Stab");

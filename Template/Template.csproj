@@ -1,6 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\Common.props"/>
+    <Import Project="..\Common.props" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
@@ -24,10 +24,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
-        <PackageReference Include="BepInEx.Core" Version="5.*"/>
-        <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*"/>
-        <PackageReference Include="UnityEngine.Modules" Version="2022.3.9" IncludeAssets="compile"/>
+        <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+        <PackageReference Include="BepInEx.Core" Version="5.*" />
+        <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
+        <PackageReference Include="UnityEngine.Modules" Version="2022.3.9" IncludeAssets="compile" />
         <PackageReference Include="Evaisa.LethalLib" Version="0.*" />
     </ItemGroup>
 
@@ -35,13 +35,13 @@
     <!-- Syntax to use the tool installed globally -->
     <!-- Allows to patch elements like networked behaviours, RPCs, etc. -->
     <Target Name="NetcodePatch" AfterTargets="PostBuildEvent">
-        <Exec Command="netcode-patch &quot;$(TargetPath)&quot; @(ReferencePathWithRefAssemblies->'&quot;%(Identity)&quot;', ' ')"/>
+        <Exec Command="netcode-patch &quot;$(TargetPath)&quot; @(ReferencePathWithRefAssemblies->'&quot;%(Identity)&quot;', ' ')" />
     </Target>
 
     <!-- Avoid that the game's assemblies are copied to the plugin's target directory -->
     <Target Name="ClearReferenceCopyLocalPaths" AfterTargets="ResolveAssemblyReferences">
         <ItemGroup>
-            <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)"/>
+            <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" />
         </ItemGroup>
     </Target>
 
@@ -52,7 +52,7 @@
             <PluginVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</PluginVersion>
         </PropertyGroup>
         <!-- https://github.com/thunderstore-io/thunderstore-cli/wiki -->
-        <Exec Command="tcli build --config-path $(SolutionDir)thunderstore.toml --package-version $(PluginVersion)"/>
+        <Exec Command="tcli build --config-path $(SolutionDir)thunderstore.toml --package-version $(PluginVersion)" />
     </Target>
 
     <ItemGroup>
@@ -66,6 +66,9 @@
     <Reference Include="Facepunch.Steamworks.Win64">
       <HintPath Condition="Exists('D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Facepunch.Steamworks.Win64.dll')">D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Facepunch.Steamworks.Win64.dll</HintPath>
       <HintPath Condition="Exists('C:\Users\Tim\source\repos\TimShaw1\Wendigos-Mod\bin\Debug\netstandard2.1\Facepunch.Steamworks.Win64.dll')">C:\Users\Tim\source\repos\TimShaw1\Wendigos-Mod\bin\Debug\netstandard2.1\Facepunch.Steamworks.Win64.dll</HintPath>
+    </Reference>
+    <Reference Include="Kino.Postprocessing">
+      <HintPath>D:\Unity Projects\YandereEnemy\UnityProject\Library\ScriptAssemblies\Kino.Postprocessing.dll</HintPath>
     </Reference>
     <Reference Include="LC_API">
       <HintPath>LC_API.dll</HintPath>
@@ -89,6 +92,9 @@
 		  <HintPath Condition="Exists('D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed')">D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.Netcode.Runtime.dll</HintPath>
 		  <HintPath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed')">C:\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.Netcode.Runtime.dll</HintPath>
 	  </Reference>
+	  <Reference Include="Unity.RenderPipelines.Core.Runtime">
+	    <HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
+	  </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.TextMeshPro.dll</HintPath>
       <HintPath Condition="Exists('C:\projects\LethalCompanyMod\Wendigos\bin\Debug\netstandard2.1\Unity.TextMeshPro.dll')">C:\projects\LethalCompanyMod\Wendigos\bin\Debug\netstandard2.1\Unity.TextMeshPro.dll</HintPath>
@@ -98,6 +104,9 @@
     </Reference>
 		<Reference Include="Unity.Animation.Rigging">
 			<HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.Animation.Rigging.dll</HintPath>
+		</Reference>
+		<Reference Include="Unity.RenderPipelines.HighDefinition.Runtime">
+			<HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\Unity.RenderPipelines.HighDefinition.Runtime.dll</HintPath>
 		</Reference>
   </ItemGroup>
 </Project>

@@ -122,7 +122,7 @@ public class Plugin : BaseUnityPlugin
         {
             __instance.roomToTarget = yandereRoomToTarget;
             __instance.chairInRoom = chairLocation;
-            WriteToConsole("Set room to target as: " + yandereRoomToTarget.gameObject.name);
+            //WriteToConsole("Set room to target as: " + yandereRoomToTarget.gameObject.name);
         }
     }
 
@@ -144,6 +144,7 @@ public class Plugin : BaseUnityPlugin
         {
             if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
             {
+                chairSpawned = false;
                 WriteToConsole("Spawning");
                 var networkHandlerHost = Instantiate(NetworkClassObj, Vector3.zero, Quaternion.identity);
                 networkHandlerHost.GetComponent<NetworkObject>().Spawn();
