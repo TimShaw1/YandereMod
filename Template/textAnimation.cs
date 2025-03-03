@@ -9,7 +9,7 @@ public class textAnimation : MonoBehaviour
 
     public AudioSource glitchSound;
 
-    private float timer = 2.5f;
+    private float timer = 7.8f;
 
     void OnEnable()
     {

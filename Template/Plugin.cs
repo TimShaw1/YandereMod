@@ -10,6 +10,9 @@ using DunGen;
 using System.Collections.Generic;
 using YourThunderstoreTeam;
 using Unity.Netcode;
+using BepInEx.Configuration;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace yandereMod;
 
@@ -35,6 +38,18 @@ public class Plugin : BaseUnityPlugin
     private static GameObject SpawnedNetworkClassObj;
     private static GameObject NoAIPrefab;
 
+    private static ConfigEntry<string> Chat_Service;
+
+    private static ConfigEntry<string> ChatGPT_api_key;
+    private static ConfigEntry<string> ChatGPT_model;
+
+    private static ConfigEntry<string> Gemini_api_key;
+    private static ConfigEntry<string> Gemini_model;
+
+    private static ConfigEntry<string> Azure_api_key;
+    private static ConfigEntry<string> Azure_region;
+    private static ConfigEntry<string> Azure_language;
+
     public static void WriteToConsole(string output)
     {
         Console.WriteLine("YandereMod: " + output);
@@ -53,6 +68,17 @@ public class Plugin : BaseUnityPlugin
 
         public static void PopulateAssets()
         {
+            string resourceName = Assembly.GetExecutingAssembly().GetManifestResourceNames().Single<string>(str => str.EndsWith("yandereassets"));
+            var fileStream2 = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+            var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "yandereassets");
+            if (!File.Exists(path))
+            {
+                var fileStream = File.Create(path);
+                fileStream2.Seek(0, SeekOrigin.Begin);
+                fileStream2.CopyTo(fileStream);
+                fileStream.Close();
+            }
+
             if ((UnityEngine.Object)(object)MainAssetBundle == (UnityEngine.Object)null)
             {
                 string sAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -82,6 +108,81 @@ public class Plugin : BaseUnityPlugin
                 }
             }
         }
+
+        Chat_Service = Config.Bind<string>(
+                "Chat",
+                "Chat Service",
+                "ChatGPT",
+                new ConfigDescription(
+                "Which chat service to use (ChatGPT or Gemini)",
+                new AcceptableValueList<string>("ChatGPT", "Gemini")
+                )
+                );
+
+        ChatGPT_api_key = Config.Bind<string>(
+                "Chat",
+                "ChatGPT API key",
+                "",
+                "Your ChatGPT API key. Do NOT add extra characters like \""
+                );
+
+        ChatGPT_model = Config.Bind<string>(
+            "Chat",
+            "ChatGPT Model",
+            "gpt-4o",
+            new ConfigDescription(
+            "Which gpt model to use. Use gpt-4o-mini if you want to save on cost and don't mind less convincing results",
+            new AcceptableValueList<string>("gpt-4o", "gpt-4o-mini")
+            )
+            );
+
+        Gemini_api_key = Config.Bind<string>(
+                "Chat",
+                "Gemini API key",
+                "",
+                "Your Gemini API key. Do NOT add extra characters like \""
+                );
+
+        Gemini_model = Config.Bind<string>(
+            "Chat",
+            "Gemini Model",
+            "gemini-2.0-flash",
+            new ConfigDescription(
+            "Which Gemini model to use. Use gemini-2.0-flash if you want faster responses",
+            new AcceptableValueList<string>("gemini-1.5-pro", "gemini-2.0-flash")
+            )
+            );
+
+        Azure_api_key = Config.Bind<string>(
+            "Azure",
+            "API key",
+            "",
+            "Your Azure API key. Do NOT add extra characters like \""
+            );
+
+        Azure_region = Config.Bind<string>(
+            "Azure",
+            "Region",
+            "canadacentral",
+            "Your Azure region"
+            );
+
+        Azure_language = Config.Bind<string>(
+            "Azure",
+            "Language",
+            "en-US",
+            "Your desired speech recognition language, list of supported languages can be found here: https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support?tabs=stt"
+            );
+
+        
+        
+        AzureSTT.Init(Azure_api_key.Value, Azure_region.Value, Azure_language.Value);
+        if (Chat_Service.Value == "ChatGPT")
+            ChatManager.Init(ChatGPT_api_key.Value, ChatGPT_model.Value);
+        else
+            ChatManager.Init(Gemini_api_key.Value, Gemini_model.Value, true);
+        
+        
 
         Assets.PopulateAssets();
         WriteToConsole("Populated Assets: " + Assets.MainAssetBundle.name);
