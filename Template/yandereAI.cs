@@ -191,7 +191,14 @@ namespace yandereMod
                     }
                     else
                     {
-                        AvoidClosestPlayer();
+                        //AvoidClosestPlayer();
+                        SetMovingTowardsTargetPlayer(targetPlayer);
+                        if (!inKillAnimation && targetPlayer != GameNetworkManager.Instance.localPlayerController)
+                        {
+                            ChangeOwnershipOfEnemy(targetPlayer.actualClientId);
+                        }
+                        base.DoAIInterval();
+                        return;
                     }
                 }
                 else
@@ -824,6 +831,7 @@ namespace yandereMod
             {
                 turnCompass.LookAt(lookAtPlayer.gameplayCamera.transform.position);
                 base.transform.rotation = Quaternion.Lerp(base.transform.rotation, Quaternion.Euler(new Vector3(0f, turnCompass.eulerAngles.y, 0f)), 30f * Time.deltaTime);
+                SetMovingTowardsTargetPlayer(lookAtPlayer);
             }
         }
 
