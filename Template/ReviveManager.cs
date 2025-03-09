@@ -79,7 +79,7 @@ namespace yandereMod
                 component.health = 100;
                 component.hasBeenCriticallyInjured = false;
                 component.disableSyncInAnimation = false;
-                if (component.isPlayerDead)
+                if (component.isPlayerDead || true)
                 {
                     component.isPlayerDead = false;
                     component.isPlayerControlled = true;
@@ -92,6 +92,7 @@ namespace yandereMod
                     {
                         StartOfRound.Instance.SetPlayerObjectExtrapolate(false);
                     }
+                    component.transform.parent = null;
                     component.TeleportPlayer(spawnPosition, false, 0f, false, true);
                     component.GetComponent<Collider>().enabled = true;
                     component.setPositionOfDeadPlayer = false;

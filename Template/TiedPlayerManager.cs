@@ -58,6 +58,17 @@ public class TiedPlayerManager : MonoBehaviour
         colorAdjustments.colorFilter.value = targetColor;
 
         Task.Factory.StartNew(() => AzureSTT.Main());
+
+        elapsedTime = 0f;
+
+        while (elapsedTime < 60f)
+        {
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        if (gameObject.activeInHierarchy == true)
+            WaitThenKill(true);
     }
 
     public void ShowText(string text)

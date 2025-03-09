@@ -9,6 +9,7 @@ using Microsoft.CognitiveServices.Speech.Audio;
 using System.Data;
 using NAudio.CoreAudioApi;
 using Unity.Netcode;
+using NAudio.Wave;
 
 namespace yandereMod
 {
@@ -22,6 +23,7 @@ namespace yandereMod
             "with 0 being keep and 100 being let go. Appealing to your beauty or attractiveness should result in a high score (even if it is distasteful), " +
             "and simple requests like asking to let go should result in a low score.";
         public static SpeechRecognizer speechRecognizer;
+        public static TaskCompletionSource<int> stopRecognition = new TaskCompletionSource<int>();
         async static Task FromMic()
         {
             try
@@ -29,7 +31,7 @@ namespace yandereMod
                 Console.WriteLine("Yandere: Start transcribing audio...");
 
 
-                var stopRecognition = new TaskCompletionSource<int>();
+                //var stopRecognition = new TaskCompletionSource<int>();
 
                 speechRecognizer.Recognizing += (s, e) =>
                 {
@@ -164,21 +166,32 @@ namespace yandereMod
                 return;
             }
 
-            using var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
+            if (is_init)
+                return;
+
+            yandereAI.WriteToConsole(IngamePlayerSettings.Instance.settings.micDevice);
+
+            //using var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
+            using var audioConfig = AudioConfig.FromMicrophoneInput(GetAudioDevices(IngamePlayerSettings.Instance.settings.micDevice));
             var speechConfig = SpeechConfig.FromSubscription(api_key, region);
             speechConfig.SpeechRecognitionLanguage = language;
             speechRecognizer = new SpeechRecognizer(speechConfig, audioConfig);
             is_init = true;
+            
         }
 
-        static void GetAudioDevices(string[] args)
+
+        static string GetAudioDevices(string deviceName = "")
         {
             var enumerator = new MMDeviceEnumerator();
             foreach (var endpoint in
             enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active))
             {
-                Console.WriteLine("{0} ({1})", endpoint.FriendlyName, endpoint.ID);
+                if (deviceName.Length != 0 && endpoint.FriendlyName == deviceName)
+                    return endpoint.ID;
             }
+
+            return "";
         }
     }
 }

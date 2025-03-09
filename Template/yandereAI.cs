@@ -110,9 +110,9 @@ namespace yandereMod
 
         public AudioClip[] searchingVoiceLines;
 
-        private NetworkVariable<bool> hasPathToChair = new NetworkVariable<bool>(false);
+        public bool hasPathToChair = false;
 
-        private NetworkVariable<bool> setPathToChair = new NetworkVariable<bool>(false);
+        public bool setPathToChair = false;
 
         private GameObject spawnedNoAIGlobal = null;
 
@@ -141,7 +141,7 @@ namespace yandereMod
             movingTowardsTargetPlayer = true;
             localPlayerCamera = GameNetworkManager.Instance.localPlayerController.gameplayCamera.transform;
             mainEntrancePosition = RoundManager.FindMainEntrancePosition();
-            setPathToChair.Value = false;
+            setPathToChair = false;
         }
 
         public override void DoAIInterval()
@@ -736,6 +736,7 @@ namespace yandereMod
 
                 if (bodyBeingCarriedCopy.playerScript.actualClientId == NetworkManager.Singleton.LocalClientId)
                 {
+                    NetworkingClass.Instance.ParentPlayerToNoAIServerRpc(new NetworkBehaviourReference(bodyBeingCarriedCopy.playerScript));
 
                     if (chairInRoom != null)
                     {
@@ -902,23 +903,23 @@ namespace yandereMod
             {
                 PlayerControllerB playerControllerB = MeetsStandardPlayerCollisionConditions2(other, inKillAnimation || startingKillAnimationLocalClient || carryingPlayerBody, true);
                 WriteToConsole("" + playerControllerB);
-                if (IsServer)
+
+                if (chairInRoom)
                 {
-                    if (chairInRoom)
-                    {
-                        agent.enabled = true;
-                        var path = new NavMeshPath();
-                        agent.CalculatePath(RoundManager.Instance.GetNavMeshPosition(chairInRoom.position, default(NavMeshHit), 10f), path);
-                        hasPathToChair.Value = path.status == NavMeshPathStatus.PathComplete;
-                        setPathToChair.Value = true;
-                        WriteToConsole("0 complete 1 partial 2 invalid: " + path.status);
-                    }
-                    if (playerControllerB != null)
-                    {
-                        KillPlayerAnimationServerRpc((int)playerControllerB.playerClientId);
-                        startingKillAnimationLocalClient = true;
-                    }
+                    agent.enabled = true;
+                    var path = new NavMeshPath();
+                    agent.CalculatePath(RoundManager.Instance.GetNavMeshPosition(chairInRoom.position, default(NavMeshHit), 10f), path);
+                    hasPathToChair = path.status == NavMeshPathStatus.PathComplete;
+                    setPathToChair = true;
+                    NetworkingClass.Instance.SetYandereBoolsServerRpc(hasPathToChair, setPathToChair);
+                    WriteToConsole("0 complete 1 partial 2 invalid: " + path.status);
                 }
+                if (playerControllerB != null)
+                {
+                    KillPlayerAnimationServerRpc((int)playerControllerB.playerClientId);
+                    startingKillAnimationLocalClient = true;
+                }
+                
             }
         }
 
@@ -999,17 +1000,17 @@ namespace yandereMod
 
         private bool CheckForPath(Vector3 position = default)
         {
-            return hasPathToChair.Value && setPathToChair.Value;
+            return hasPathToChair && setPathToChair;
         }
 
         private void YandereKillPlayer(PlayerControllerB p, Vector3 bodyVelocity, bool spawnBody = true, CauseOfDeath causeOfDeath = CauseOfDeath.Unknown, int deathAnimation = 0, Vector3 positionOffset = default(Vector3))
         {
-            if (!p.isPlayerDead && p.AllowPlayerDeath())
+            if (!p.isPlayerDead && p.AllowPlayerDeath() && p.GetComponent<Collider>().enabled == true)
             {
                 if (chairInRoom != null && CheckForPath(chairInRoom.position))
                 {
 
-                    p.isPlayerDead = true;
+                    //p.isPlayerDead = true;
                     p.isPlayerControlled = false;
                     p.thisPlayerModelArms.enabled = false;
                     p.localVisor.position = p.playersManager.notSpawnedPosition.position;
@@ -1066,6 +1067,20 @@ namespace yandereMod
                     p.DropAllHeldItems(spawnBody);
                     p.DisableJetpackControlsLocally();
 
+                    p.transform.parent = this.transform;
+
+                    /*
+                    try
+                    {
+                        var id = p.gameObject.GetComponent<Dissonance.Integrations.Unity_NFGO.NfgoPlayer>().PlayerId;
+                        NetworkingClass.Instance.MovePlayerAudioSourceServerRpc(id);
+                    }
+                    catch
+                    {
+                        WriteToConsole("ID broken");
+                    }
+                    */
+
                     if (NetworkManager.IsServer)
                     {
                         SwitchToBehaviourState(3);
@@ -1108,7 +1123,7 @@ namespace yandereMod
 
             if (chairInRoom)
             {
-                while (!setPathToChair.Value)
+                while (!setPathToChair)
                     yield return null;
 
 

@@ -6,6 +6,7 @@ using UnityEngine;
 using yandereMod;
 using DunGen;
 using GameNetcodeStuff;
+using Unity.Collections;
 
 namespace yandereMod;
 
@@ -89,6 +90,9 @@ public class NetworkingClass : NetworkBehaviour
 
             foreach (Transform t in Plugin.chairLocation)
             {
+                if (t.name.Contains("Scavenger"))
+                    t.GetComponent<TiedPlayerManager>().enabled = false;
+
                 if (t.name.Contains("Rope") || t.name.Contains("Scavenger") || t.name.Contains("DoorCollider"))
                 {
                     t.gameObject.SetActive(true);
@@ -103,7 +107,7 @@ public class NetworkingClass : NetworkBehaviour
         component2.runningSFX.mute = true;
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     public void disableYandereRoomServerRpc()
     {
         disableYandereRoomClientRpc();
@@ -131,5 +135,77 @@ public class NetworkingClass : NetworkBehaviour
 
             }
         }
+
+        FindFirstObjectByType<YandereEyeTarget>().gameObject.SetActive(false);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void SetYandereBoolsServerRpc(bool hasPathToChair, bool setPathToChair)
+    {
+        SetYandereBoolsClientRpc(hasPathToChair, setPathToChair);
+    }
+
+    [ClientRpc]
+    public void SetYandereBoolsClientRpc(bool hasPathToChair, bool setPathToChair)
+    {
+        var ai = FindFirstObjectByType<yandereAI>();
+        if (ai)
+        {
+            ai.hasPathToChair = hasPathToChair;
+            ai.setPathToChair = setPathToChair;
+        }
+    }
+
+    [ClientRpc]
+    public void InitAzureClientRpc()
+    {
+        AzureSTT.Init(Plugin.Azure_api_key.Value, Plugin.Azure_region.Value, Plugin.Azure_language.Value);
+        Plugin.chairSpawned = false;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void MovePlayerAudioSourceServerRpc(FixedString128Bytes playerID)
+    {
+        MovePlayerAudioSourceClientRpc(playerID);
+    }
+
+    [ClientRpc]
+    public void MovePlayerAudioSourceClientRpc(FixedString128Bytes playerID)
+    {
+        var comms = FindFirstObjectByType<PlayerVoiceIngameSettings>().transform.parent;
+        AudioSource commsAudioSource = null;
+        foreach (Transform t in comms.transform)
+        {
+            if (t.name.Contains(playerID.ToString()))
+            {
+                commsAudioSource = t.GetComponent<AudioSource>();
+                break;
+            }
+        }
+        if (commsAudioSource != null)
+            commsAudioSource.transform.parent = FindFirstObjectByType<yandereAI>().transform;
+        else
+            yandereAI.WriteToConsole("No comms audio source");
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ParentPlayerToNoAIServerRpc(NetworkBehaviourReference netRef)
+    {
+        ParentPlayerToNoAIClientRpc(netRef);
+    }
+
+    [ClientRpc]
+    public void ParentPlayerToNoAIClientRpc(NetworkBehaviourReference netRef)
+    {
+        PlayerControllerB component;
+        netRef.TryGet(out component);
+        if (component == null)
+        {
+            yandereAI.WriteToConsole("component is null!");
+            return;
+        }
+
+        component.transform.parent = Plugin.chairLocation;
+        component.transform.position = Plugin.chairLocation.position;
     }
 }

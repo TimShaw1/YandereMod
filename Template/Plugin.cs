@@ -13,6 +13,8 @@ using Unity.Netcode;
 using BepInEx.Configuration;
 using System.Threading.Tasks;
 using System.Linq;
+using NAudio.CoreAudioApi;
+using static UnityEngine.Rendering.DebugUI;
 
 namespace yandereMod;
 
@@ -46,9 +48,9 @@ public class Plugin : BaseUnityPlugin
     private static ConfigEntry<string> Gemini_api_key;
     private static ConfigEntry<string> Gemini_model;
 
-    private static ConfigEntry<string> Azure_api_key;
-    private static ConfigEntry<string> Azure_region;
-    private static ConfigEntry<string> Azure_language;
+    public static ConfigEntry<string> Azure_api_key;
+    public static ConfigEntry<string> Azure_region;
+    public static ConfigEntry<string> Azure_language;
 
     public static void WriteToConsole(string output)
     {
@@ -176,13 +178,10 @@ public class Plugin : BaseUnityPlugin
 
         
         
-        AzureSTT.Init(Azure_api_key.Value, Azure_region.Value, Azure_language.Value);
         if (Chat_Service.Value == "ChatGPT")
             ChatManager.Init(ChatGPT_api_key.Value, ChatGPT_model.Value);
         else
             ChatManager.Init(Gemini_api_key.Value, Gemini_model.Value, true);
-        
-        
 
         Assets.PopulateAssets();
         WriteToConsole("Populated Assets: " + Assets.MainAssetBundle.name);
@@ -250,6 +249,17 @@ public class Plugin : BaseUnityPlugin
                 var networkHandlerHost = Instantiate(NetworkClassObj, Vector3.zero, Quaternion.identity);
                 networkHandlerHost.GetComponent<NetworkObject>().Spawn();
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(StartOfRound), "StartGame")]
+    class StartOfRoundStartGamePatch
+    {
+        static void Postfix()
+        {
+            NetworkingClass.Instance.InitAzureClientRpc();
+            //AzureSTT.Init(Azure_api_key.Value, Azure_region.Value, Azure_language.Value);
+            //chairSpawned = false;
         }
     }
 
